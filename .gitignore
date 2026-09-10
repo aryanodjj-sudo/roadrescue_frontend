@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-ssr
+*.local
+
+# Environment files — real values (production API URL, etc.) shouldn't
+# be committed. .env.example stays tracked as the template.
+.env
+.env.production
+.env.*.local
