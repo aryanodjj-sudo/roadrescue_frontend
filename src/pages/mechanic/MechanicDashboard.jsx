@@ -20,6 +20,7 @@ import { useSocket } from "../../context/SocketContext";
 import { useServiceRequests, REQUEST_STATUSES } from "../../context/ServiceRequestContext";
 import Button from "../../components/common/Button";
 import LiveTrackingMap from "../../components/map/LiveTrackingMap";
+import ComplaintsPanel from "../../components/complaints/ComplaintsPanel";
 import api from "../../utils/api";
 import { servicesData } from "../../data/servicesData";
 import { formatPrice } from "../../utils/formatPrice";
@@ -28,6 +29,7 @@ const TABS = [
   { id: "incoming", label: "Incoming Requests" },
   { id: "active", label: "Active Job" },
   { id: "completed", label: "Completed Jobs" },
+  { id: "complaints", label: "Complaints & Disputes" },
   { id: "profile", label: "Profile & Availability" },
 ];
 
@@ -126,15 +128,46 @@ function MechanicDashboard() {
       ).toFixed(1)
     : "—";
 
+  // Going online without a location means /mechanics/nearby will never
+  // surface this mechanic to any user searching nearby — so grab a fresh
+  // GPS fix and send it along in the same status update.
   const toggleOnline = async () => {
     if (!profile) return;
     setStatusError("");
     const nextOnline = !profile.isOnline;
-    try {
-      const { data } = await api.put("/mechanics/status", { isOnline: nextOnline });
-      setProfile((prev) => ({ ...prev, isOnline: data.isOnline }));
-    } catch (err) {
-      setStatusError(err.message || "Couldn't update your availability.");
+
+    const applyStatusUpdate = async (location) => {
+      try {
+        const { data } = await api.put("/mechanics/status", {
+          isOnline: nextOnline,
+          ...(location ? { location } : {}),
+        });
+        setProfile((prev) => ({
+          ...prev,
+          isOnline: data.isOnline,
+          ...(data.location ? { location: data.location } : {}),
+        }));
+        if (nextOnline && !location && !profile.location?.lat) {
+          setStatusError(
+            "You're online, but location access was denied — customers searching nearby won't see you until it's shared."
+          );
+        }
+      } catch (err) {
+        setStatusError(err.message || "Couldn't update your availability.");
+      }
+    };
+
+    if (nextOnline && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) =>
+          applyStatusUpdate({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          }),
+        () => applyStatusUpdate(null)
+      );
+    } else {
+      applyStatusUpdate(null);
     }
   };
 
@@ -514,6 +547,9 @@ function MechanicDashboard() {
             )}
           </>
         )}
+
+        {/* COMPLAINTS & DISPUTES TAB */}
+        {activeTab === "complaints" && <ComplaintsPanel />}
 
         {/* PROFILE TAB */}
         {activeTab === "profile" && (

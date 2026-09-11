@@ -1,5 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { getDashboardPath } from "../../utils/getDashboardPath";
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading, isAuthenticated } = useAuth();
@@ -16,9 +17,12 @@ function ProtectedRoute({ children, allowedRoles }) {
     return <Navigate to="/login" replace />;
   }
 
-  // If specific roles are required and user's role doesn't match
+  // Logged in, but this route isn't for their role (e.g. a mechanic
+  // hitting a customer-only page) — send them to their own dashboard
+  // instead of silently bouncing to the public homepage, which used to
+  // look like the click "did nothing".
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={getDashboardPath(user.role)} replace />;
   }
 
   return children;

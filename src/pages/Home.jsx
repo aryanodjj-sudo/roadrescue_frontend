@@ -10,13 +10,26 @@ import { servicesData } from "../data/servicesData";
 import { howItWorksData } from "../data/howItWorksData";
 import { mockMechanics } from "../data/mockMechanics";
 import { useAuth } from "../context/AuthContext";
+import { getDashboardPath } from "../utils/getDashboardPath";
 
 function Home() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
-  // If logged in, CTAs go straight into the app; otherwise they go to login first.
-  const assistancePath = isAuthenticated ? "/dashboard/services" : "/login";
-  const findMechanicPath = isAuthenticated ? "/dashboard/find-mechanic" : "/login";
+  // "Get Assistance" / "Find Mechanic" are vehicle-owner actions. If a
+  // mechanic or admin is logged in (their session persists across
+  // reloads), those /dashboard/* routes are user-only and would just
+  // bounce them straight back here — so send them to their own
+  // dashboard instead, same as the navbar's Dashboard link does.
+  const assistancePath = !isAuthenticated
+    ? "/login"
+    : user.role === "user"
+    ? "/dashboard/services"
+    : getDashboardPath(user.role);
+  const findMechanicPath = !isAuthenticated
+    ? "/login"
+    : user.role === "user"
+    ? "/dashboard/find-mechanic"
+    : getDashboardPath(user.role);
 
   return (
     <div className="min-h-screen bg-white">

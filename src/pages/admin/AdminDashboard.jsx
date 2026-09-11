@@ -3,7 +3,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useServiceRequests } from "../../context/ServiceRequestContext";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import api from "../../utils/api";
-import { mockComplaints, mockDisputes } from "../../data/adminMockData";
 
 import AdminOverview from "./sections/AdminOverview";
 import AdminUsers from "./sections/AdminUsers";
@@ -21,22 +20,33 @@ function AdminDashboard() {
   const [activeSection, setActiveSection] = useState("overview");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [pendingVerifications, setPendingVerifications] = useState(0);
+  const [openComplaints, setOpenComplaints] = useState(0);
+  const [openDisputes, setOpenDisputes] = useState(0);
 
   const allRequests = getAllRequests();
 
-  // Small, cheap fetch just for the sidebar badge count — the Verification
-  // section itself does its own full fetch when opened.
+  // Small, cheap fetches just for the sidebar badge counts — each section
+  // itself does its own full fetch when opened.
   useEffect(() => {
     api
       .get("/admin/reports")
       .then(({ data }) => setPendingVerifications(data.reports.pendingVerifications))
       .catch(() => {});
+
+    api
+      .get("/admin/complaints")
+      .then(({ data }) => {
+        const open = data.complaints.filter((c) => c.status !== "Resolved");
+        setOpenComplaints(open.filter((c) => c.type === "Complaint").length);
+        setOpenDisputes(open.filter((c) => c.type === "Dispute").length);
+      })
+      .catch(() => {});
   }, []);
 
   const badges = {
     verification: pendingVerifications,
-    complaints: mockComplaints.filter((c) => c.status !== "Resolved").length,
-    disputes: mockDisputes.filter((d) => d.status !== "Resolved").length,
+    complaints: openComplaints,
+    disputes: openDisputes,
   };
 
   const renderSection = () => {
@@ -56,9 +66,9 @@ function AdminDashboard() {
       case "reviews":
         return <AdminServicesReviews />;
       case "complaints":
-        return <AdminComplaintsDisputes />;
+        return <AdminComplaintsDisputes filterType="Complaint" />;
       case "disputes":
-        return <AdminComplaintsDisputes />;
+        return <AdminComplaintsDisputes filterType="Dispute" />;
       case "reports":
         return <AdminReportsRevenue allRequests={allRequests} />;
       case "revenue":

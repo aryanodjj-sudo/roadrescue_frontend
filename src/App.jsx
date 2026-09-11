@@ -13,10 +13,14 @@ import ServiceHistory from "./pages/ServiceHistory";
 import TrackService from "./pages/TrackService";
 import Invoice from "./pages/Invoice";
 import Notifications from "./pages/Notifications";
+import Complaints from "./pages/Complaints";
 import MechanicDashboard from "./pages/mechanic/MechanicDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AboutUs from "./pages/company/AboutUs";
+import BecomePartner from "./pages/company/BecomePartner";
+import Careers from "./pages/company/Careers";
+import Contact from "./pages/company/Contact";
 import ProtectedRoute from "./components/common/ProtectedRoute";
-
 function NotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center">
@@ -33,6 +37,10 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/about" element={<AboutUs />} />
+      <Route path="/partner" element={<BecomePartner />} />
+      <Route path="/careers" element={<Careers />} />
+      <Route path="/contact" element={<Contact />} />
 
       <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["user"]}><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard/vehicles" element={<ProtectedRoute allowedRoles={["user"]}><Vehicles /></ProtectedRoute>} />
@@ -45,6 +53,7 @@ function App() {
       <Route path="/dashboard/track/:id" element={<ProtectedRoute allowedRoles={["user"]}><TrackService /></ProtectedRoute>} />
       <Route path="/dashboard/invoice/:id" element={<ProtectedRoute allowedRoles={["user"]}><Invoice /></ProtectedRoute>} />
       <Route path="/dashboard/notifications" element={<ProtectedRoute allowedRoles={["user"]}><Notifications /></ProtectedRoute>} />
+      <Route path="/dashboard/complaints" element={<ProtectedRoute allowedRoles={["user"]}><Complaints /></ProtectedRoute>} />
 
       <Route path="/mechanic/dashboard" element={<ProtectedRoute allowedRoles={["mechanic"]}><MechanicDashboard /></ProtectedRoute>} />
       <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />

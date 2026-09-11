@@ -7,6 +7,7 @@ import {
   FaTools,
   FaHistory,
   FaBell,
+  FaExclamationTriangle,
   FaSignOutAlt,
   FaBars,
   FaTimes,
@@ -30,6 +31,7 @@ function DashboardLayout({ children }) {
       icon: FaBell,
       badge: unreadCount,
     },
+    { label: "Complaints", to: "/dashboard/complaints", icon: FaExclamationTriangle },
     { label: "Profile", to: "/dashboard/profile", icon: FaUser },
   ];
 

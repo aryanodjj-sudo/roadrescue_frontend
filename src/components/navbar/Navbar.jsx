@@ -4,6 +4,7 @@ import { HiMenu, HiX } from "react-icons/hi";
 import { FaSignOutAlt } from "react-icons/fa";
 import Button from "../common/Button";
 import { useAuth } from "../../context/AuthContext";
+import { getDashboardPath } from "../../utils/getDashboardPath";
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,12 +17,7 @@ function Navbar() {
     { name: "Why RoadRescue", href: "#why-us" },
   ];
 
-  const dashboardPath =
-    user?.role === "mechanic"
-      ? "/mechanic/dashboard"
-      : user?.role === "admin"
-      ? "/admin/dashboard"
-      : "/dashboard";
+  const dashboardPath = getDashboardPath(user?.role);
 
   const handleLogout = () => {
     logout();
