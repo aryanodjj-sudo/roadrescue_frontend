@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { FaSearch, FaCarSide, FaClipboardList } from "react-icons/fa";
 import api from "../../../utils/api";
+import { formatDate } from "../../../utils/formatDate";
 
 function StatusPill({ status }) {
   const styles =
@@ -117,7 +118,7 @@ function AdminUsers() {
                     <p className="text-xs text-slate-400">{u.phone || "—"}</p>
                   </td>
                   <td className="px-5 py-4 text-slate-500">
-                    {new Date(u.createdAt).toLocaleDateString()}
+                    {formatDate(u.createdAt)}
                   </td>
                   <td className="px-5 py-4 text-slate-500">
                     <span className="inline-flex items-center gap-1.5">

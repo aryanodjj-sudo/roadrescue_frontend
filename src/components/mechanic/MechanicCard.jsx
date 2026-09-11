@@ -1,5 +1,6 @@
 import { FaStar, FaMapMarkerAlt, FaClock, FaCheckCircle } from "react-icons/fa";
 import Button from "../common/Button";
+import { formatPrice } from "../../utils/formatPrice";
 
 function MechanicCard({ mechanic, isSelected, onSelect }) {
   return (
@@ -56,7 +57,9 @@ function MechanicCard({ mechanic, isSelected, onSelect }) {
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
         <div>
           <p className="text-xs text-slate-400">Estimated cost</p>
-          <p className="font-bold text-slate-900">₹{mechanic.pricePerVisit}</p>
+          <p className="font-bold text-slate-900">
+            {formatPrice(mechanic.pricePerVisit)}
+          </p>
         </div>
         <Button
           variant={isSelected ? "primary" : "outline"}

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { formatPrice } from "../../../utils/formatPrice";
+import { formatDate } from "../../../utils/formatDate";
 
 const STATUS_FILTERS = ["All", "Pending", "Accepted", "On The Way", "Arrived", "In Progress", "Completed", "Cancelled"];
 
@@ -77,10 +79,10 @@ function AdminServiceRequests({ allRequests }) {
                     </span>
                   </td>
                   <td className="px-5 py-4 text-slate-500">
-                    {new Date(r.createdAt).toLocaleDateString()}
+                    {formatDate(r.createdAt)}
                   </td>
                   <td className="px-5 py-4 font-medium text-slate-900">
-                    {r.mechanic?.pricePerVisit ? `₹${r.mechanic.pricePerVisit}` : "—"}
+                    {r.mechanic?.pricePerVisit ? formatPrice(r.mechanic.pricePerVisit) : "—"}
                   </td>
                 </tr>
               ))}

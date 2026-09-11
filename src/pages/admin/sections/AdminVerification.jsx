@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { FaCheck, FaTimes } from "react-icons/fa";
 import Button from "../../../components/common/Button";
 import api from "../../../utils/api";
+import { formatDate } from "../../../utils/formatDate";
 
 const SERVICE_LABELS = {
   breakdown: "Breakdown Repair",
@@ -82,7 +83,7 @@ function AdminVerification() {
                 {m.experienceYears} yrs experience · {m.user?.phone || "—"}
               </p>
               <p className="text-sm text-slate-500 mb-3">
-                Registered {new Date(m.createdAt).toLocaleDateString()}
+                Registered {formatDate(m.createdAt)}
               </p>
 
               <div className="flex flex-wrap gap-3">
@@ -125,7 +126,7 @@ function AdminVerification() {
                 Services:{" "}
                 {(selected.services || []).map((s) => SERVICE_LABELS[s] || s).join(", ") || "None listed"}
               </p>
-              <p>Registered: {new Date(selected.createdAt).toLocaleDateString()}</p>
+              <p>Registered: {formatDate(selected.createdAt)}</p>
               <p className="text-xs text-slate-400">
                 Document upload/verification isn't supported by the backend yet — this
                 approval is based on the profile details above only.

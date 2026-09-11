@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { FaHistory, FaMapMarkerAlt, FaFileInvoice } from "react-icons/fa";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import { useServiceRequests } from "../context/ServiceRequestContext";
+import { formatDateTime } from "../utils/formatDate";
 
 const STATUS_STYLES = {
   Pending: "bg-amber-50 text-amber-600",
@@ -56,7 +57,7 @@ function ServiceHistory() {
                     <FaMapMarkerAlt className="text-xs" /> {req.mechanic.name}
                   </p>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    {new Date(req.createdAt).toLocaleString()}
+                    {formatDateTime(req.createdAt)}
                   </p>
                 </div>
               </div>

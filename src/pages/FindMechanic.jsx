@@ -7,9 +7,8 @@ import MechanicFilters from "../components/mechanic/MechanicFilters";
 import Button from "../components/common/Button";
 import api from "../utils/api";
 import { useVehicles } from "../context/VehicleContext";
-
 // Same coordinates the backend seed script uses for its demo mechanics.
-const FALLBACK_LOCATION = { lat: 28.6139, lng: 77.209 };
+import { FALLBACK_LOCATION } from "../utils/constants";
 
 function FindMechanic() {
   const navigate = useNavigate();

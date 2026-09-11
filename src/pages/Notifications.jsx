@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { FaBell } from "react-icons/fa";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import { useServiceRequests } from "../context/ServiceRequestContext";
+import { formatRelativeTime } from "../utils/formatDate";
 
 function Notifications() {
   const { notifications, markNotificationsRead, loading } =
@@ -47,7 +48,7 @@ function Notifications() {
               <div>
                 <p className="text-sm text-slate-800">{n.message}</p>
                 <p className="text-xs text-slate-400 mt-1">
-                  {new Date(n.createdAt).toLocaleString()}
+                  {formatRelativeTime(n.createdAt)}
                 </p>
               </div>
             </div>

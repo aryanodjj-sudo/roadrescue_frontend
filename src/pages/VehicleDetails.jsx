@@ -3,6 +3,7 @@ import { FaCarSide, FaArrowLeft } from "react-icons/fa";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import { useVehicles } from "../context/VehicleContext";
 import { useServiceRequests } from "../context/ServiceRequestContext";
+import { formatDate } from "../utils/formatDate";
 
 function VehicleDetails() {
   const { id } = useParams();
@@ -48,7 +49,7 @@ function VehicleDetails() {
           <div>
             <p className="text-slate-400">Added On</p>
             <p className="font-medium text-slate-900">
-              {new Date(vehicle.createdAt).toLocaleDateString()}
+              {formatDate(vehicle.createdAt)}
             </p>
           </div>
         </div>
@@ -75,7 +76,7 @@ function VehicleDetails() {
             >
               <p className="font-medium text-slate-900">{r.serviceTitle}</p>
               <p className="text-xs text-slate-400 mt-1">
-                {r.status} · {new Date(r.createdAt).toLocaleDateString()}
+                {r.status} · {formatDate(r.createdAt)}
               </p>
             </Link>
           ))}

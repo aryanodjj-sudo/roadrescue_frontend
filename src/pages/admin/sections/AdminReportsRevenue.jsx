@@ -3,6 +3,7 @@ import StatCard from "../../../components/admin/StatCard";
 import { FaMoneyBillWave, FaChartLine, FaClipboardCheck, FaPercentage } from "react-icons/fa";
 import api from "../../../utils/api";
 import { mockRevenueByMonth } from "../../../data/adminMockData";
+import { formatCurrency } from "../../../utils/formatPrice";
 
 function AdminReportsRevenue({ allRequests }) {
   const [reports, setReports] = useState(null);
@@ -60,7 +61,7 @@ function AdminReportsRevenue({ allRequests }) {
         <StatCard
           icon={FaMoneyBillWave}
           label="Collected Revenue"
-          value={loading || !reports ? "…" : `₹${reports.totalRevenue.toLocaleString("en-IN")}`}
+          value={loading || !reports ? "…" : formatCurrency(reports.totalRevenue)}
           tone="accent"
         />
         <StatCard
@@ -83,7 +84,7 @@ function AdminReportsRevenue({ allRequests }) {
             {mockRevenueByMonth.map((m) => (
               <tr key={m.month} className="hover:bg-slate-50">
                 <td className="px-5 py-4 text-slate-900 font-medium">{m.month}</td>
-                <td className="px-5 py-4 text-slate-500">₹{m.revenue.toLocaleString("en-IN")}</td>
+                <td className="px-5 py-4 text-slate-500">{formatCurrency(m.revenue)}</td>
               </tr>
             ))}
           </tbody>

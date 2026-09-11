@@ -12,6 +12,7 @@ import {
 import StatCard from "../../../components/admin/StatCard";
 import api from "../../../utils/api";
 import { mockRevenueByMonth } from "../../../data/adminMockData";
+import { formatCurrency } from "../../../utils/formatPrice";
 
 function AdminOverview() {
   const [reports, setReports] = useState(null);
@@ -65,7 +66,7 @@ function AdminOverview() {
           <StatCard
             icon={FaMoneyBillWave}
             label="Collected Revenue"
-            value={`₹${reports.totalRevenue.toLocaleString("en-IN")}`}
+            value={formatCurrency(reports.totalRevenue)}
             tone="accent"
           />
         </div>
@@ -84,7 +85,7 @@ function AdminOverview() {
               <div
                 className="w-full max-w-10 bg-primary-500 rounded-t-lg"
                 style={{ height: `${Math.max((m.revenue / maxRevenue) * 140, 8)}px` }}
-                title={`₹${m.revenue.toLocaleString("en-IN")}`}
+                title={formatCurrency(m.revenue)}
               />
               <span className="text-xs text-slate-500">{m.month}</span>
             </div>

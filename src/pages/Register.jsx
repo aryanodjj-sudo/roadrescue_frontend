@@ -4,6 +4,13 @@ import { motion } from "framer-motion";
 import { FaUser, FaEnvelope, FaLock, FaCarSide, FaTools, FaUserShield } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import Button from "../components/common/Button";
+import {
+  isNonEmpty,
+  isValidEmail,
+  isValidPassword,
+  doPasswordsMatch,
+} from "../utils/validators";
+import { MIN_PASSWORD_LENGTH } from "../utils/constants";
 
 function Register() {
   const navigate = useNavigate();
@@ -27,13 +34,23 @@ function Register() {
     e.preventDefault();
     setError("");
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+    if (!isNonEmpty(formData.name)) {
+      setError("Please enter your full name");
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (!isValidEmail(formData.email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    if (!isValidPassword(formData.password)) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+      return;
+    }
+
+    if (!doPasswordsMatch(formData.password, formData.confirmPassword)) {
+      setError("Passwords do not match");
       return;
     }
 

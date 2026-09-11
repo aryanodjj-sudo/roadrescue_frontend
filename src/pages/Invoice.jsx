@@ -5,6 +5,8 @@ import DashboardLayout from "../components/dashboard/DashboardLayout";
 import Button from "../components/common/Button";
 import { useServiceRequests } from "../context/ServiceRequestContext";
 import api from "../utils/api";
+import { formatPrice } from "../utils/formatPrice";
+import { formatDateTime } from "../utils/formatDate";
 
 function Invoice() {
   const { id } = useParams();
@@ -57,7 +59,7 @@ function Invoice() {
 
         <div className="text-sm text-slate-500 mb-6">
           <p>Request ID: {request.id}</p>
-          <p>Date: {new Date(request.completedAt).toLocaleString()}</p>
+          <p>Date: {formatDateTime(request.completedAt)}</p>
         </div>
 
         {loading ? (
@@ -95,17 +97,17 @@ function Invoice() {
             <div className="space-y-2 text-sm mb-6">
               <div className="flex justify-between">
                 <span className="text-slate-500">Service charge</span>
-                <span>₹{payment.serviceCharge}</span>
+                <span>{formatPrice(payment.serviceCharge)}</span>
               </div>
               {payment.additionalCharges > 0 && (
                 <div className="flex justify-between">
                   <span className="text-slate-500">Additional charges</span>
-                  <span>₹{payment.additionalCharges}</span>
+                  <span>{formatPrice(payment.additionalCharges)}</span>
                 </div>
               )}
               <div className="flex justify-between font-bold text-slate-900 text-base pt-2 border-t border-slate-100">
                 <span>Total</span>
-                <span>₹{payment.total}</span>
+                <span>{formatPrice(payment.total)}</span>
               </div>
               <div className="flex justify-between text-xs text-slate-400 pt-1">
                 <span>Payment status</span>

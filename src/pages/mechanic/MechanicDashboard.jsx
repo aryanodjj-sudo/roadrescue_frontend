@@ -22,6 +22,8 @@ import Button from "../../components/common/Button";
 import LiveTrackingMap from "../../components/map/LiveTrackingMap";
 import api from "../../utils/api";
 import { servicesData } from "../../data/servicesData";
+import { formatPrice } from "../../utils/formatPrice";
+import { formatDateTime } from "../../utils/formatDate";
 const TABS = [
   { id: "incoming", label: "Incoming Requests" },
   { id: "active", label: "Active Job" },
@@ -261,7 +263,9 @@ function MechanicDashboard() {
           </div>
           <div className="bg-white rounded-2xl p-5 border border-slate-100">
             <FaMoneyBillWave className="text-primary-600 mb-2" />
-            <p className="text-xl font-bold text-slate-900">₹{totalEarnings}</p>
+            <p className="text-xl font-bold text-slate-900">
+              {formatPrice(totalEarnings)}
+            </p>
             <p className="text-xs text-slate-500">Total Earnings</p>
           </div>
           <div className="bg-white rounded-2xl p-5 border border-slate-100">
@@ -350,7 +354,7 @@ function MechanicDashboard() {
                       </p>
                     )}
                     <p className="text-xs text-slate-400 mb-4">
-                      Requested {new Date(req.createdAt).toLocaleString()}
+                      Requested {formatDateTime(req.createdAt)}
                     </p>
                     <div className="flex gap-3">
                       <Button
@@ -419,7 +423,7 @@ function MechanicDashboard() {
                   )}
                   <p className="flex items-center gap-2">
                     <FaClock className="text-primary-600" />
-                    Requested {new Date(activeJob.createdAt).toLocaleString()}
+                    Requested {formatDateTime(activeJob.createdAt)}
                   </p>
                   <p className="flex items-center gap-2">
                     <FaMapMarkerAlt className="text-primary-600" />
@@ -492,7 +496,7 @@ function MechanicDashboard() {
                         {job.serviceTitle}
                       </p>
                       <p className="text-xs text-slate-400">
-                        Completed {new Date(job.completedAt).toLocaleString()}
+                        Completed {formatDateTime(job.completedAt)}
                       </p>
                       {job.review && (
                         <p className="text-xs text-amber-500 flex items-center gap-1 mt-1">
@@ -502,7 +506,7 @@ function MechanicDashboard() {
                       )}
                     </div>
                     <p className="font-bold text-slate-900">
-                      ₹{job.mechanic.pricePerVisit}
+                      {formatPrice(job.mechanic.pricePerVisit)}
                     </p>
                   </div>
                 ))}

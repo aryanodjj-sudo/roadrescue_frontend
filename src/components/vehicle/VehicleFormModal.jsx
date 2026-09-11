@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaTimes } from "react-icons/fa";
 import Button from "../common/Button";
-
-const VEHICLE_TYPES = ["Car", "Motorcycle", "SUV", "Truck", "Van"];
+import { VEHICLE_TYPES } from "../../utils/constants";
+import { isValidYear } from "../../utils/validators";
 
 function VehicleFormModal({ isOpen, onClose, onSubmit, initialData }) {
   const [formData, setFormData] = useState({
@@ -32,6 +32,14 @@ function VehicleFormModal({ isOpen, onClose, onSubmit, initialData }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Backs up the <input min/max> attributes with a real JS check —
+    // some browsers don't strictly block out-of-range values on submit.
+    if (!isValidYear(formData.year)) {
+      setError("Enter a valid year between 1980 and next year.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await onSubmit(formData);
