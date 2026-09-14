@@ -1,17 +1,19 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { FaMapMarkerAlt, FaLocationArrow } from "react-icons/fa";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { FaMapMarkerAlt, FaLocationArrow, FaUserFriends } from "react-icons/fa";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import MechanicCard from "../components/mechanic/MechanicCard";
 import MechanicFilters from "../components/mechanic/MechanicFilters";
 import Button from "../components/common/Button";
 import api from "../utils/api";
 import { useVehicles } from "../context/VehicleContext";
+
 // Same coordinates the backend seed script uses for its demo mechanics.
-import { FALLBACK_LOCATION } from "../utils/constants";
+const FALLBACK_LOCATION = { lat: 28.6139, lng: 77.209 };
 
 function FindMechanic() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { vehicles } = useVehicles();
 
@@ -19,6 +21,9 @@ function FindMechanic() {
   const vehicleId = searchParams.get("vehicle");
   const description = searchParams.get("description") || "";
   const vehicle = vehicles.find((v) => v.id === vehicleId) || null;
+
+  // Passed forward from Services.jsx when "booking for someone else" is on
+  const { bookingForSomeoneElse, recipient, address } = location.state || {};
 
   const [userLocation, setUserLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState("idle");
@@ -87,6 +92,9 @@ function FindMechanic() {
         vehicle,
         description,
         customerLocation: userLocation,
+        bookingForSomeoneElse,
+        recipient,
+        address,
       },
     });
   };
@@ -101,6 +109,17 @@ function FindMechanic() {
             : "Compare mechanics near your location."}
         </p>
       </div>
+
+      {bookingForSomeoneElse && (
+        <div className="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-xl px-5 py-3 mb-6 text-sm">
+          <FaUserFriends className="text-amber-600 shrink-0" />
+          <span className="text-amber-700">
+            Booking for <span className="font-semibold">{recipient?.name}</span> at{" "}
+            {address?.line}
+            {address?.city ? `, ${address.city}` : ""}
+          </span>
+        </div>
+      )}
 
       <div className="flex items-center justify-between bg-white rounded-xl border border-slate-100 px-5 py-3 mb-6">
         <div className="flex items-center gap-2 text-sm">

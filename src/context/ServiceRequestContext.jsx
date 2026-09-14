@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useAuth } from "./AuthContext";
-import { useSocket } from "./SocketContext";
 import api from "../utils/api";
 import { servicesData } from "../data/servicesData";
 
@@ -21,6 +20,8 @@ function normalizeRequest(r) {
   return {
     id: r._id,
     userId: r.user?._id || r.user,
+    customerName: r.user?.name || "Customer",
+    customerPhone: r.user?.phone || "",
     vehicle: r.vehicle
       ? { id: r.vehicle._id, label: `${r.vehicle.make} ${r.vehicle.model}`, plateNumber: r.vehicle.plateNumber }
       : null,
@@ -38,6 +39,14 @@ function normalizeRequest(r) {
       : null,
     mechanicId: r.acceptedBy || null,
     customerLocation: r.customerLocation || null,
+    bookingForSomeoneElse: !!r.bookingForSomeoneElse,
+    recipientName: r.recipientName || null,
+    recipientPhone: r.recipientPhone || null,
+    manualAddress: r.manualAddress || null,
+    originalPrice: r.originalPrice ?? r.pricePerVisit,
+    discountAmount: r.discountAmount || 0,
+    couponCode: r.couponCode || null,
+    viaSubscription: !!r.viaSubscription,
     status: r.status,
     statusHistory: r.statusHistory || [],
     review: r.review || null,
@@ -48,7 +57,6 @@ function normalizeRequest(r) {
 
 export function ServiceRequestProvider({ children }) {
   const { user, isAuthenticated } = useAuth();
-  const socket = useSocket();
   const [requests, setRequests] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -74,12 +82,7 @@ export function ServiceRequestProvider({ children }) {
     try {
       const { data } = await api.get("/notifications");
       setNotifications(
-        data.notifications.map((n) => ({
-          id: n._id,
-          message: n.message,
-          createdAt: n.createdAt,
-          read: n.read,
-        }))
+        data.notifications.map((n) => ({ id: n._id, message: n.message, createdAt: n.createdAt, read: n.read }))
       );
     } catch {
       setNotifications([]);
@@ -91,36 +94,28 @@ export function ServiceRequestProvider({ children }) {
     Promise.all([refreshRequests(), refreshNotifications()]).finally(() => setLoading(false));
   }, [user, refreshRequests, refreshNotifications]);
 
-  // Real-time: whenever the backend pushes one of these events (a new
-  // request, an accept/status/cancel, or a fresh notification), silently
-  // refetch instead of waiting for the person to manually reload. This is
-  // what makes the mechanic's Incoming tab and the customer's Track page
-  // update live without polling.
-  useEffect(() => {
-    if (!socket) return;
-
-    const onRequestChanged = () => refreshRequests();
-    const onNotification = () => refreshNotifications();
-
-    socket.on("request:new", onRequestChanged);
-    socket.on("request:updated", onRequestChanged);
-    socket.on("notification:new", onNotification);
-
-    return () => {
-      socket.off("request:new", onRequestChanged);
-      socket.off("request:updated", onRequestChanged);
-      socket.off("notification:new", onNotification);
-    };
-  }, [socket, refreshRequests, refreshNotifications]);
-
-  // POST /api/service-requests
-  const createRequest = async ({ vehicle, serviceType, description, mechanic, customerLocation }) => {
+  const createRequest = async ({
+    vehicle,
+    serviceType,
+    description,
+    mechanic,
+    customerLocation,
+    bookingForSomeoneElse,
+    recipient,
+    address,
+    couponCode,
+  }) => {
     const { data } = await api.post("/service-requests", {
       vehicleId: vehicle.id,
       serviceType,
       description,
       mechanicId: mechanic.id,
       customerLocation,
+      bookingForSomeoneElse: !!bookingForSomeoneElse,
+      recipientName: bookingForSomeoneElse ? recipient?.name : undefined,
+      recipientPhone: bookingForSomeoneElse ? recipient?.phone : undefined,
+      manualAddress: bookingForSomeoneElse ? address : undefined,
+      couponCode: couponCode || undefined,
     });
     await Promise.all([refreshRequests(), refreshNotifications()]);
     return normalizeRequest(data.request);
@@ -131,8 +126,6 @@ export function ServiceRequestProvider({ children }) {
     await refreshRequests();
   };
 
-  // 2nd arg kept only for backward-compat with existing call sites — the
-  // backend identifies the mechanic from the JWT, not from this parameter.
   const acceptRequest = async (requestId) => {
     await api.put(`/service-requests/${requestId}/accept`);
     await Promise.all([refreshRequests(), refreshNotifications()]);
@@ -143,8 +136,6 @@ export function ServiceRequestProvider({ children }) {
     await Promise.all([refreshRequests(), refreshNotifications()]);
   };
 
-  // A mechanic declining a request before accepting it — backend treats
-  // this the same as cancelling a still-Pending request.
   const dismissRequest = async (requestId) => {
     await api.put(`/service-requests/${requestId}/cancel`);
     await refreshRequests();
@@ -188,9 +179,7 @@ export function ServiceRequestProvider({ children }) {
     getCompletedJobsForMechanic,
   };
 
-  return (
-    <ServiceRequestContext.Provider value={value}>{children}</ServiceRequestContext.Provider>
-  );
+  return <ServiceRequestContext.Provider value={value}>{children}</ServiceRequestContext.Provider>;
 }
 
 export function useServiceRequests() {

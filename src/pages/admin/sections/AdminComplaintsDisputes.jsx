@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { FaExclamationTriangle, FaBalanceScale } from "react-icons/fa";
+import { FaExclamationTriangle, FaBalanceScale, FaHourglassHalf, FaSpinner, FaCheckCircle } from "react-icons/fa";
 import Button from "../../../components/common/Button";
+import StatCard from "../../../components/admin/StatCard";
 import api from "../../../utils/api";
 import { formatDateTime } from "../../../utils/formatDate";
 
@@ -141,6 +142,28 @@ function AdminComplaintsDisputes({ filterType }) {
       <p className="text-slate-500 text-sm mb-6">
         Raised by users and mechanics from their dashboards. Update the status as you work through each one.
       </p>
+      
+
+      <div className="grid grid-cols-3 gap-4 mb-6 max-w-2xl">
+        <StatCard
+          icon={FaHourglassHalf}
+          label="Pending"
+          value={visible.filter((c) => c.status === "Pending").length}
+          tone="amber"
+        />
+        <StatCard
+          icon={FaSpinner}
+          label="In Progress"
+          value={visible.filter((c) => c.status === "In Progress").length}
+          tone="primary"
+        />
+        <StatCard
+          icon={FaCheckCircle}
+          label="Resolved"
+          value={visible.filter((c) => c.status === "Resolved").length}
+          tone="green"
+        />
+      </div>
 
       {error && (
         <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3 mb-6">

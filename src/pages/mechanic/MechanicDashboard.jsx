@@ -1,37 +1,20 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  FaTools,
-  FaSignOutAlt,
-  FaBolt,
-  FaMapMarkerAlt,
-  FaCarSide,
-  FaClock,
-  FaStar,
-  FaCheckCircle,
-  FaMoneyBillWave,
-  FaClipboardList,
-  FaUserCircle,
-  FaDirections,
-  FaTimes,
-  FaExclamationTriangle,
-} from "react-icons/fa";
+import { FaExclamationTriangle } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
 import { useServiceRequests, REQUEST_STATUSES } from "../../context/ServiceRequestContext";
 import Button from "../../components/common/Button";
-import LiveTrackingMap from "../../components/map/LiveTrackingMap";
 import ComplaintsPanel from "../../components/complaints/ComplaintsPanel";
+import MechanicSidebar from "../../components/mechanic/MechanicSidebar";
 import api from "../../utils/api";
-import { servicesData } from "../../data/servicesData";
-import { formatPrice } from "../../utils/formatPrice";
-import { formatDateTime } from "../../utils/formatDate";
-const TABS = [
-  { id: "incoming", label: "Incoming Requests" },
-  { id: "active", label: "Active Job" },
-  { id: "completed", label: "Completed Jobs" },
-  { id: "complaints", label: "Complaints & Disputes" },
-  { id: "profile", label: "Profile & Availability" },
-];
+
+import MechanicOverview from "./sections/MechanicOverview";
+import MechanicIncomingRequests from "./sections/MechanicIncomingRequests";
+import MechanicActiveJob from "./sections/MechanicActiveJob";
+import MechanicCompletedJobs from "./sections/MechanicCompletedJobs";
+import MechanicEarnings from "./sections/MechanicEarnings";
+import MechanicReviews from "./sections/MechanicReviews";
+import MechanicProfile from "./sections/MechanicProfile";
 
 function MechanicDashboard() {
   const { user, logout } = useAuth();
@@ -45,7 +28,8 @@ function MechanicDashboard() {
     cancelRequest,
   } = useServiceRequests();
 
-  const [activeTab, setActiveTab] = useState("incoming");
+  const [activeSection, setActiveSection] = useState("overview");
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   // Mechanic's own profile/availability — backed by GET /api/mechanics/me
   // and PUT /api/mechanics/profile, /api/mechanics/status.
@@ -120,6 +104,19 @@ function MechanicDashboard() {
     (sum, r) => sum + (r.mechanic.pricePerVisit || 0),
     0
   );
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfWeek = new Date(startOfToday);
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+
+  const todayEarnings = completedJobs
+    .filter((r) => r.completedAt && new Date(r.completedAt) >= startOfToday)
+    .reduce((sum, r) => sum + (r.mechanic.pricePerVisit || 0), 0);
+  const weekEarnings = completedJobs
+    .filter((r) => r.completedAt && new Date(r.completedAt) >= startOfWeek)
+    .reduce((sum, r) => sum + (r.mechanic.pricePerVisit || 0), 0);
+
   const reviewedJobs = completedJobs.filter((r) => r.review);
   const avgRating = reviewedJobs.length
     ? (
@@ -189,7 +186,7 @@ function MechanicDashboard() {
 
   const handleAccept = (requestId) => {
     acceptRequest(requestId, user);
-    setActiveTab("active");
+    setActiveSection("active");
   };
 
   const handleDismiss = (requestId) => {
@@ -207,7 +204,7 @@ function MechanicDashboard() {
   if (profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-accent-200 border-t-accent-600 rounded-full animate-spin" />
       </div>
     );
   }
@@ -229,471 +226,117 @@ function MechanicDashboard() {
     );
   }
 
+  const badges = { incoming: incoming.length };
+
+  const renderSection = () => {
+    switch (activeSection) {
+      case "overview":
+        return (
+          <MechanicOverview
+            profile={profile}
+            user={user}
+            incoming={incoming}
+            activeJob={activeJob}
+            completedJobs={completedJobs}
+            totalEarnings={totalEarnings}
+            todayEarnings={todayEarnings}
+            weekEarnings={weekEarnings}
+            avgRating={avgRating}
+            reviewedJobs={reviewedJobs}
+            statusError={statusError}
+            onNavigate={setActiveSection}
+          />
+        );
+      case "incoming":
+        return (
+          <MechanicIncomingRequests
+            profile={profile}
+            incoming={incoming}
+            activeJob={activeJob}
+            onAccept={handleAccept}
+            onDismiss={handleDismiss}
+            onToggleOnline={toggleOnline}
+          />
+        );
+      case "active":
+        return (
+          <MechanicActiveJob
+            activeJob={activeJob}
+            ownLocation={ownLocation}
+            navigateUrl={navigateUrl}
+            nextStatus={nextStatus}
+            onAdvanceStatus={advanceStatus}
+            onCancel={cancelRequest}
+          />
+        );
+      case "completed":
+        return <MechanicCompletedJobs completedJobs={completedJobs} />;
+      case "earnings":
+        return (
+          <MechanicEarnings
+            completedJobs={completedJobs}
+            todayEarnings={todayEarnings}
+            weekEarnings={weekEarnings}
+            totalEarnings={totalEarnings}
+          />
+        );
+      case "reviews":
+        return (
+          <MechanicReviews reviewedJobs={reviewedJobs} avgRating={avgRating} />
+        );
+      case "complaints":
+        return <ComplaintsPanel />;
+      case "profile":
+        return (
+          <MechanicProfile
+            user={user}
+            profile={profile}
+            profileError={profileError}
+            saving={saving}
+            onSaveField={saveProfileField}
+            onToggleOnline={toggleOnline}
+          />
+        );
+      default:
+        return (
+          <MechanicOverview
+            profile={profile}
+            user={user}
+            incoming={incoming}
+            activeJob={activeJob}
+            completedJobs={completedJobs}
+            totalEarnings={totalEarnings}
+            todayEarnings={todayEarnings}
+            weekEarnings={weekEarnings}
+            avgRating={avgRating}
+            reviewedJobs={reviewedJobs}
+            statusError={statusError}
+            onNavigate={setActiveSection}
+          />
+        );
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Top bar */}
-      <header className="bg-white border-b border-slate-100 sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="text-xl font-extrabold text-slate-900">
-            Road<span className="text-primary-600">Rescue</span>{" "}
-            <span className="text-slate-400 font-medium text-sm">
-              · Mechanic
-            </span>
-          </span>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={toggleOnline}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-                profile.isOnline
-                  ? "bg-green-50 text-green-600"
-                  : "bg-slate-100 text-slate-500"
-              }`}
-            >
-              <FaBolt />
-              {profile.isOnline ? "Online" : "Offline"}
-            </button>
-            <Button variant="outline" onClick={logout}>
-              <FaSignOutAlt className="text-sm" /> Log Out
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">
-            Welcome, {user?.name} 🔧
-          </h1>
-          <p className="text-slate-500 mt-1">
-            {profile.isOnline
-              ? "You're online and visible for new requests."
-              : "You're offline. Go online to start receiving requests."}
-          </p>
-          {profile.verification?.status !== "Approved" && (
-            <p className="text-amber-600 text-sm mt-2 flex items-center gap-2">
-              <FaExclamationTriangle />
-              Your account verification is{" "}
-              {profile.verification?.status?.toLowerCase() || "pending"}. You
-              must be verified before you can go online.
-            </p>
-          )}
-          {statusError && (
-            <p className="text-red-600 text-sm mt-2">{statusError}</p>
-          )}
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-5 border border-slate-100">
-            <FaClipboardList className="text-primary-600 mb-2" />
-            <p className="text-xl font-bold text-slate-900">{incoming.length}</p>
-            <p className="text-xs text-slate-500">Incoming</p>
-          </div>
-          <div className="bg-white rounded-2xl p-5 border border-slate-100">
-            <FaTools className="text-primary-600 mb-2" />
-            <p className="text-xl font-bold text-slate-900">{activeJob ? 1 : 0}</p>
-            <p className="text-xs text-slate-500">Active Job</p>
-          </div>
-          <div className="bg-white rounded-2xl p-5 border border-slate-100">
-            <FaMoneyBillWave className="text-primary-600 mb-2" />
-            <p className="text-xl font-bold text-slate-900">
-              {formatPrice(totalEarnings)}
-            </p>
-            <p className="text-xs text-slate-500">Total Earnings</p>
-          </div>
-          <div className="bg-white rounded-2xl p-5 border border-slate-100">
-            <FaStar className="text-amber-500 mb-2" />
-            <p className="text-xl font-bold text-slate-900">{avgRating}</p>
-            <p className="text-xs text-slate-500">Avg Rating</p>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex flex-wrap gap-2 mb-6 border-b border-slate-200">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? "border-primary-600 text-primary-600"
-                  : "border-transparent text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              {tab.label}
-              {tab.id === "incoming" && incoming.length > 0 && (
-                <span className="ml-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                  {incoming.length}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* INCOMING TAB */}
-        {activeTab === "incoming" && (
-          <>
-            {!profile.isOnline ? (
-              <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-14 text-center">
-                <FaBolt className="text-4xl text-slate-300 mx-auto mb-4" />
-                <h3 className="font-semibold text-slate-700 mb-1">
-                  You're offline
-                </h3>
-                <p className="text-slate-500 text-sm mb-5">
-                  Go online to start seeing incoming service requests.
-                </p>
-                <Button
-                  variant="primary"
-                  onClick={toggleOnline}
-                  className="mx-auto"
-                  disabled={profile.verification?.status !== "Approved"}
-                >
-                  Go Online
-                </Button>
-              </div>
-            ) : incoming.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-14 text-center">
-                <FaClipboardList className="text-4xl text-slate-300 mx-auto mb-4" />
-                <h3 className="font-semibold text-slate-700 mb-1">
-                  No incoming requests right now
-                </h3>
-                <p className="text-slate-500 text-sm">
-                  New requests from nearby customers will show up here.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                {incoming.map((req) => (
-                  <div
-                    key={req.id}
-                    className="bg-white rounded-2xl p-5 border border-slate-100"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-slate-900">
-                        {req.serviceTitle}
-                      </h3>
-                      <span className="text-xs bg-amber-50 text-amber-600 px-3 py-1 rounded-full font-medium">
-                        {req.status}
-                      </span>
-                    </div>
-                    {req.vehicle && (
-                      <p className="text-sm text-slate-500 flex items-center gap-2 mb-1">
-                        <FaCarSide /> {req.vehicle.label} · {req.vehicle.plateNumber}
-                      </p>
-                    )}
-                    {req.description && (
-                      <p className="text-sm text-slate-500 mb-3">
-                        "{req.description}"
-                      </p>
-                    )}
-                    <p className="text-xs text-slate-400 mb-4">
-                      Requested {formatDateTime(req.createdAt)}
-                    </p>
-                    <div className="flex gap-3">
-                      <Button
-                        variant="primary"
-                        className="flex-1 justify-center"
-                        onClick={() => handleAccept(req.id)}
-                        disabled={!!activeJob}
-                      >
-                        Accept
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleDismiss(req.id)}
-                      >
-                        <FaTimes className="text-sm" />
-                      </Button>
-                    </div>
-                    {activeJob && (
-                      <p className="text-xs text-amber-600 mt-2">
-                        Finish your active job before accepting a new one.
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* ACTIVE JOB TAB */}
-        {activeTab === "active" && (
-          <>
-            {!activeJob ? (
-              <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-14 text-center">
-                <FaTools className="text-4xl text-slate-300 mx-auto mb-4" />
-                <h3 className="font-semibold text-slate-700 mb-1">
-                  No active job
-                </h3>
-                <p className="text-slate-500 text-sm">
-                  Accept a request from the Incoming tab to start a job.
-                </p>
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl border border-slate-100 p-6 max-w-2xl">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-slate-900">
-                    {activeJob.serviceTitle}
-                  </h3>
-                  <span className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-medium">
-                    {activeJob.status}
-                  </span>
-                </div>
-
-                <div className="space-y-2 text-sm text-slate-600 mb-5">
-                  {activeJob.vehicle && (
-                    <p className="flex items-center gap-2">
-                      <FaCarSide className="text-primary-600" />
-                      {activeJob.vehicle.label} · {activeJob.vehicle.plateNumber}
-                    </p>
-                  )}
-                  {activeJob.description && (
-                    <p className="flex items-start gap-2">
-                      <FaClipboardList className="text-primary-600 mt-0.5" />
-                      {activeJob.description}
-                    </p>
-                  )}
-                  <p className="flex items-center gap-2">
-                    <FaClock className="text-primary-600" />
-                    Requested {formatDateTime(activeJob.createdAt)}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <FaMapMarkerAlt className="text-primary-600" />
-                    {activeJob.customerLocation
-                      ? "Customer location shared"
-                      : "Customer did not share a precise location"}
-                  </p>
-                </div>
-                {activeJob.customerLocation && (
-                  <div className="mb-5">
-                    <LiveTrackingMap
-                      customerLocation={activeJob.customerLocation}
-                      mechanicLocation={ownLocation}
-                      showRoute
-                      heightClassName="h-56"
-                    />
-                  </div>
-                )}
-
-                <div className="flex flex-wrap gap-3">
-                  {navigateUrl && (
-                    <a href={navigateUrl} target="_blank" rel="noreferrer">
-                      <Button variant="outline">
-                        <FaDirections className="text-sm" /> Navigate
-                      </Button>
-                    </a>
-                  )}
-                  {nextStatus && (
-                    <Button
-                      variant="primary"
-                      onClick={() => advanceStatus(activeJob.id, nextStatus)}
-                    >
-                      Mark as "{nextStatus}"
-                    </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    onClick={() => cancelRequest(activeJob.id)}
-                  >
-                    Cancel Job
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* COMPLETED TAB */}
-        {activeTab === "completed" && (
-          <>
-            {completedJobs.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-14 text-center">
-                <FaCheckCircle className="text-4xl text-slate-300 mx-auto mb-4" />
-                <h3 className="font-semibold text-slate-700 mb-1">
-                  No completed jobs yet
-                </h3>
-                <p className="text-slate-500 text-sm">
-                  Jobs you complete will show up here along with earnings.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {completedJobs.map((job) => (
-                  <div
-                    key={job.id}
-                    className="bg-white rounded-2xl border border-slate-100 p-5 flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="font-semibold text-slate-900">
-                        {job.serviceTitle}
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        Completed {formatDateTime(job.completedAt)}
-                      </p>
-                      {job.review && (
-                        <p className="text-xs text-amber-500 flex items-center gap-1 mt-1">
-                          <FaStar /> {job.review.rating}/5
-                          {job.review.comment && ` — "${job.review.comment}"`}
-                        </p>
-                      )}
-                    </div>
-                    <p className="font-bold text-slate-900">
-                      {formatPrice(job.mechanic.pricePerVisit)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* COMPLAINTS & DISPUTES TAB */}
-        {activeTab === "complaints" && <ComplaintsPanel />}
-
-        {/* PROFILE TAB */}
-        {activeTab === "profile" && (
-          <div className="bg-white rounded-2xl border border-slate-100 p-6 max-w-xl">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-14 h-14 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center">
-                <FaUserCircle className="text-3xl" />
-              </div>
-              <div>
-                <p className="font-semibold text-slate-900">{user?.name}</p>
-                <p className="text-sm text-slate-400">{user?.email}</p>
-              </div>
-            </div>
-
-            {profileError && (
-              <p className="text-red-600 text-sm mb-4">{profileError}</p>
-            )}
-
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Services Offered
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {servicesData.map((s) => {
-                  const selected = profile.services.includes(s.id);
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      disabled={saving}
-                      onClick={() => {
-                        const updatedServices = selected
-                          ? profile.services.filter((id) => id !== s.id)
-                          : [...profile.services, s.id];
-                        saveProfileField({ services: updatedServices });
-                      }}
-                      className={`text-sm px-3 py-1.5 rounded-full font-medium border transition-colors disabled:opacity-50 ${
-                        selected
-                          ? "bg-primary-600 text-white border-primary-600"
-                          : "bg-white text-slate-600 border-slate-200"
-                      }`}
-                    >
-                      {s.title}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-5">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Price Per Visit (₹)
-                </label>
-                <input
-                  type="number"
-                  defaultValue={profile.pricePerVisit}
-                  onBlur={(e) => {
-                    const value = Number(e.target.value);
-                    if (value !== profile.pricePerVisit) {
-                      saveProfileField({ pricePerVisit: value });
-                    }
-                  }}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Experience (years)
-                </label>
-                <input
-                  type="number"
-                  defaultValue={profile.experienceYears}
-                  onBlur={(e) => {
-                    const value = Number(e.target.value);
-                    if (value !== profile.experienceYears) {
-                      saveProfileField({ experienceYears: value });
-                    }
-                  }}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
-            </div>
-
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Service Area
-              </label>
-              <input
-                type="text"
-                defaultValue={profile.serviceArea}
-                onBlur={(e) => {
-                  if (e.target.value !== profile.serviceArea) {
-                    saveProfileField({ serviceArea: e.target.value });
-                  }
-                }}
-                placeholder="e.g. South Delhi, Gurgaon"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Bio / Verification Notes
-              </label>
-              <textarea
-                defaultValue={profile.bio}
-                onBlur={(e) => {
-                  if (e.target.value !== profile.bio) {
-                    saveProfileField({ bio: e.target.value });
-                  }
-                }}
-                rows={3}
-                placeholder="Years of experience, certifications, ID/verification details..."
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
-              />
-              <p className="text-xs text-slate-400 mt-1">
-                Verification status:{" "}
-                <span className="font-medium text-slate-600">
-                  {profile.verification?.status || "Pending"}
-                </span>
-                . Document upload is a future enhancement — the backend model
-                doesn't yet support file storage.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-slate-50">
-              <span className="text-sm font-medium text-slate-700">
-                Availability
-              </span>
-              <button
-                onClick={toggleOnline}
-                disabled={profile.verification?.status !== "Approved"}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold disabled:opacity-50 ${
-                  profile.isOnline
-                    ? "bg-green-50 text-green-600"
-                    : "bg-slate-200 text-slate-500"
-                }`}
-              >
-                <FaBolt /> {profile.isOnline ? "Online" : "Offline"}
-              </button>
-            </div>
-          </div>
-        )}
+    <div className="min-h-screen bg-slate-50 flex">
+      <MechanicSidebar
+        active={activeSection}
+        onSelect={setActiveSection}
+        badges={badges}
+        user={user}
+        profile={profile}
+        onToggleOnline={toggleOnline}
+        onLogout={logout}
+        isMobileNavOpen={isMobileNavOpen}
+        onOpenMobile={() => setIsMobileNavOpen(true)}
+        onCloseMobile={() => setIsMobileNavOpen(false)}
+      />
+      <main
+        className={`flex-1 md:ml-64 pt-20 md:pt-10 p-6 md:p-10 ${
+          profile?.verification?.status !== "Approved" ? "md:pt-16" : ""
+        }`}
+      >
+        {renderSection()}
       </main>
     </div>
   );

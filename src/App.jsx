@@ -10,6 +10,7 @@ import Services from "./pages/Services";
 import FindMechanic from "./pages/FindMechanic";
 import BookingConfirmation from "./pages/BookingConfirmation";
 import ServiceHistory from "./pages/ServiceHistory";
+import MyReviews from "./pages/MyReviews";
 import TrackService from "./pages/TrackService";
 import Invoice from "./pages/Invoice";
 import Notifications from "./pages/Notifications";
@@ -21,6 +22,7 @@ import BecomePartner from "./pages/company/BecomePartner";
 import Careers from "./pages/company/Careers";
 import Contact from "./pages/company/Contact";
 import ProtectedRoute from "./components/common/ProtectedRoute";
+import Subscription from "./pages/Subscription";
 function NotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center">
@@ -50,8 +52,10 @@ function App() {
       <Route path="/dashboard/find-mechanic" element={<ProtectedRoute allowedRoles={["user"]}><FindMechanic /></ProtectedRoute>} />
       <Route path="/dashboard/booking" element={<ProtectedRoute allowedRoles={["user"]}><BookingConfirmation /></ProtectedRoute>} />
       <Route path="/dashboard/history" element={<ProtectedRoute allowedRoles={["user"]}><ServiceHistory /></ProtectedRoute>} />
+      <Route path="/dashboard/reviews" element={<ProtectedRoute allowedRoles={["user"]}><MyReviews /></ProtectedRoute>} />
       <Route path="/dashboard/track/:id" element={<ProtectedRoute allowedRoles={["user"]}><TrackService /></ProtectedRoute>} />
       <Route path="/dashboard/invoice/:id" element={<ProtectedRoute allowedRoles={["user"]}><Invoice /></ProtectedRoute>} />
+      <Route path="/dashboard/subscription" element={<ProtectedRoute allowedRoles={["user"]}><Subscription /></ProtectedRoute>} />
       <Route path="/dashboard/notifications" element={<ProtectedRoute allowedRoles={["user"]}><Notifications /></ProtectedRoute>} />
       <Route path="/dashboard/complaints" element={<ProtectedRoute allowedRoles={["user"]}><Complaints /></ProtectedRoute>} />
 

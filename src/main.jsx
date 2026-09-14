@@ -5,6 +5,7 @@ import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { SocketProvider } from "./context/SocketContext.jsx";
 import { VehicleProvider } from "./context/VehicleContext.jsx";
+import { SubscriptionProvider } from "./context/SubscriptionContext.jsx";
 import { ServiceRequestProvider } from "./context/ServiceRequestContext.jsx";
 import "./index.css";
 
@@ -15,7 +16,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <SocketProvider>
           <VehicleProvider>
             <ServiceRequestProvider>
-              <App />
+              <SubscriptionProvider>
+                <App />
+              </SubscriptionProvider>
             </ServiceRequestProvider>
           </VehicleProvider>
         </SocketProvider>

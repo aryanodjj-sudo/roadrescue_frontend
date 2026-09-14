@@ -1,5 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
-import { FaSearch, FaCheckCircle, FaTimesCircle, FaHourglassHalf } from "react-icons/fa";
+import {
+  FaSearch,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaHourglassHalf,
+  FaTools,
+  FaUserCheck,
+  FaStar,
+  FaWifi,
+} from "react-icons/fa";
+import StatCard from "../../../components/admin/StatCard";
+import { formatPrice } from "../../../utils/formatPrice";
 import api from "../../../utils/api";
 
 const SERVICE_LABELS = {
@@ -51,6 +62,10 @@ function AdminMechanics() {
     (m.user?.name || "").toLowerCase().includes(search.toLowerCase())
   );
 
+  const verifiedCount = mechanics.filter((m) => m.verification?.status === "Approved").length;
+  const pendingCount = mechanics.filter((m) => m.verification?.status === "Pending").length;
+  const onlineCount = mechanics.filter((m) => m.isOnline).length;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
@@ -59,6 +74,13 @@ function AdminMechanics() {
       <p className="text-slate-500 text-sm mb-6">
         {loading ? "Loading..." : `${filtered.length} of ${mechanics.length} registered mechanics`}
       </p>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <StatCard icon={FaTools} label="Total Mechanics" value={mechanics.length} tone="primary" />
+        <StatCard icon={FaUserCheck} label="Verified" value={verifiedCount} tone="green" />
+        <StatCard icon={FaHourglassHalf} label="Pending" value={pendingCount} tone="amber" />
+        <StatCard icon={FaWifi} label="Online Now" value={onlineCount} tone="accent" />
+      </div>
 
       <div className="relative mb-5 max-w-sm">
         <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
@@ -91,12 +113,29 @@ function AdminMechanics() {
           {filtered.map((m) => (
             <div key={m._id} className="bg-white rounded-2xl border border-slate-100 p-5">
               <div className="flex items-start justify-between mb-2">
-                <h3 className="font-semibold text-slate-900">{m.user?.name || "Unnamed"}</h3>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={`https://i.pravatar.cc/150?u=${m._id}`}
+                    alt={m.user?.name}
+                    className="w-11 h-11 rounded-full object-cover shrink-0"
+                  />
+                  <div>
+                    <h3 className="font-semibold text-slate-900">{m.user?.name || "Unnamed"}</h3>
+                    <div className="flex items-center gap-1 text-xs text-amber-500">
+                      <FaStar /> {m.rating?.toFixed(1) || "New"}
+                      {m.isOnline && (
+                        <span className="ml-2 inline-flex items-center gap-1 text-green-600">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Online
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
                 <VerificationPill status={m.verification?.status} />
               </div>
               <p className="text-sm text-slate-500 mb-1">{m.serviceArea || "No service area set"}</p>
               <p className="text-sm text-slate-500 mb-3">
-                {m.experienceYears} yrs experience · {m.user?.phone || "—"}
+                {m.experienceYears} yrs experience · {m.user?.phone || "—"} · {formatPrice(m.pricePerVisit)}/visit
               </p>
               <div className="flex flex-wrap gap-2">
                 {(m.services || []).map((s) => (

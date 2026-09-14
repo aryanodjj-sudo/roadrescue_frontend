@@ -5,6 +5,8 @@ import AdminSidebar from "../../components/admin/AdminSidebar";
 import api from "../../utils/api";
 
 import AdminOverview from "./sections/AdminOverview";
+import AdminCoupons from "./sections/AdminCoupons";
+import AdminSubscriptions from "./sections/AdminSubscriptions";
 import AdminUsers from "./sections/AdminUsers";
 import AdminMechanics from "./sections/AdminMechanics";
 import AdminVerification from "./sections/AdminVerification";
@@ -52,7 +54,7 @@ function AdminDashboard() {
   const renderSection = () => {
     switch (activeSection) {
       case "overview":
-        return <AdminOverview />;
+        return <AdminOverview onNavigate={setActiveSection} allRequests={allRequests} />;
       case "users":
         return <AdminUsers />;
       case "mechanics":
@@ -65,6 +67,10 @@ function AdminDashboard() {
         return <AdminServicesReviews />;
       case "reviews":
         return <AdminServicesReviews />;
+      case "coupons":
+        return <AdminCoupons />;
+      case "subscriptions":
+        return <AdminSubscriptions />;
       case "complaints":
         return <AdminComplaintsDisputes filterType="Complaint" />;
       case "disputes":
@@ -76,7 +82,7 @@ function AdminDashboard() {
       case "settings":
         return <AdminSettings />;
       default:
-        return <AdminOverview allRequests={allRequests} />;
+        return <AdminOverview onNavigate={setActiveSection} allRequests={allRequests} />;
     }
   };
 

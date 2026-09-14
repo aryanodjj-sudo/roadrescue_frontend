@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { FaSearch, FaCarSide, FaClipboardList } from "react-icons/fa";
+import { FaSearch, FaCarSide, FaClipboardList, FaUsers, FaUserCheck, FaUserSlash, FaUserPlus } from "react-icons/fa";
+import StatCard from "../../../components/admin/StatCard";
 import api from "../../../utils/api";
 import { formatDate } from "../../../utils/formatDate";
 
@@ -47,6 +48,14 @@ function AdminUsers() {
     return matchesSearch && matchesStatus;
   });
 
+  const activeCount = users.filter((u) => u.status === "active").length;
+  const suspendedCount = users.filter((u) => u.status !== "active").length;
+  const newThisMonth = users.filter((u) => {
+    const created = new Date(u.createdAt);
+    const now = new Date();
+    return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
+  }).length;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
@@ -55,6 +64,13 @@ function AdminUsers() {
       <p className="text-slate-500 text-sm mb-6">
         {loading ? "Loading..." : `${filtered.length} of ${users.length} registered users`}
       </p>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <StatCard icon={FaUsers} label="Total Users" value={users.length} tone="primary" />
+        <StatCard icon={FaUserCheck} label="Active" value={activeCount} tone="green" />
+        <StatCard icon={FaUserSlash} label="Suspended" value={suspendedCount} tone="red" />
+        <StatCard icon={FaUserPlus} label="New This Month" value={newThisMonth} tone="accent" />
+      </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1">
