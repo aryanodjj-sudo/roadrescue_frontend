@@ -4,9 +4,9 @@ import { FaMapMarkerAlt, FaLocationArrow, FaUserFriends } from "react-icons/fa";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import MechanicCard from "../components/mechanic/MechanicCard";
 import MechanicFilters from "../components/mechanic/MechanicFilters";
-import Button from "../components/common/Button";
 import api from "../utils/api";
 import { useVehicles } from "../context/VehicleContext";
+import { calculateFuelBill } from "../data/servicesData";
 
 // Same coordinates the backend seed script uses for its demo mechanics.
 const FALLBACK_LOCATION = { lat: 28.6139, lng: 77.209 };
@@ -19,20 +19,27 @@ function FindMechanic() {
 
   const serviceType = searchParams.get("service");
   const vehicleId = searchParams.get("vehicle");
-  const description = searchParams.get("description") || "";
   const vehicle = vehicles.find((v) => v.id === vehicleId) || null;
 
-  // Passed forward from Services.jsx when "booking for someone else" is on
-  const { bookingForSomeoneElse, recipient, address } = location.state || {};
+  // Passed forward from Services.jsx
+  const {
+    description,
+    bookingForSomeoneElse,
+    recipient,
+    address,
+    serviceDetails,
+  } = location.state || {};
 
   const [userLocation, setUserLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState("idle");
   const [sortBy, setSortBy] = useState("distance");
   const [minRating, setMinRating] = useState(0);
-  const [selectedMechanic, setSelectedMechanic] = useState(null);
   const [mechanics, setMechanics] = useState([]);
   const [isLoadingMechanics, setIsLoadingMechanics] = useState(false);
   const [error, setError] = useState("");
+
+  const isFuel = serviceType === "fuel";
+  const fuelBill = isFuel ? calculateFuelBill(serviceDetails?.fuelType, serviceDetails?.litres) : null;
 
   const detectLocation = () => {
     setLocationStatus("loading");
@@ -84,10 +91,12 @@ function FindMechanic() {
       .finally(() => setIsLoadingMechanics(false));
   }, [userLocation, serviceType, minRating, sortBy]);
 
-  const handleContinue = () => {
+  // Clicking a mechanic card goes straight to the review/confirm page —
+  // no extra "Confirm" step in between.
+  const handleSelectMechanic = (mechanic) => {
     navigate("/dashboard/booking", {
       state: {
-        mechanic: selectedMechanic,
+        mechanic,
         serviceType,
         vehicle,
         description,
@@ -95,6 +104,7 @@ function FindMechanic() {
         bookingForSomeoneElse,
         recipient,
         address,
+        serviceDetails,
       },
     });
   };
@@ -105,7 +115,7 @@ function FindMechanic() {
         <h1 className="text-2xl font-bold text-slate-900">Nearby Mechanics</h1>
         <p className="text-slate-500 mt-1">
           {serviceType
-            ? `Showing mechanics available for "${serviceType}"`
+            ? `Showing mechanics available for "${serviceType}" — tap one to continue`
             : "Compare mechanics near your location."}
         </p>
       </div>
@@ -118,6 +128,16 @@ function FindMechanic() {
             {address?.line}
             {address?.city ? `, ${address.city}` : ""}
           </span>
+        </div>
+      )}
+
+      {isFuel && fuelBill && (
+        <div className="flex items-center justify-between bg-primary-50 border border-primary-100 rounded-xl px-5 py-3 mb-6 text-sm">
+          <span className="text-primary-700">
+            {serviceDetails?.litres}L {serviceDetails?.fuelType} — every mechanic charges the
+            same delivery price for this order
+          </span>
+          <span className="font-bold text-primary-700">Rs.{fuelBill.total}</span>
         </div>
       )}
 
@@ -157,22 +177,10 @@ function FindMechanic() {
                 <MechanicCard
                   key={mechanic.id}
                   mechanic={mechanic}
-                  isSelected={selectedMechanic?.id === mechanic.id}
-                  onSelect={setSelectedMechanic}
+                  onSelect={handleSelectMechanic}
+                  priceOverride={isFuel ? { label: "Delivery order total", value: fuelBill.total } : null}
                 />
               ))}
-            </div>
-          )}
-
-          {selectedMechanic && (
-            <div className="fixed bottom-0 left-0 right-0 md:left-64 bg-white border-t border-slate-200 px-6 py-4 flex items-center justify-between shadow-lg">
-              <div>
-                <p className="text-sm text-slate-500">Selected mechanic</p>
-                <p className="font-semibold text-slate-900">{selectedMechanic.name}</p>
-              </div>
-              <Button variant="primary" className="py-3 px-8" onClick={handleContinue}>
-                Confirm Request
-              </Button>
             </div>
           )}
         </>

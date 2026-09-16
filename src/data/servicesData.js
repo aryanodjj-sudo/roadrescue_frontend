@@ -33,3 +33,44 @@ export const servicesData = [
     icon: FaGasPump,
   },
 ];
+
+// --- Fuel Delivery pricing -------------------------------------------
+// For fuel delivery, the bill is NOT the mechanic's own price — it's
+// fuel cost (rate x litres) + a flat delivery charge, same for every
+// mechanic. Keep these numbers in sync with the backend's
+// utils/pricing.js, which is the authoritative source used to compute
+// the actual charge on the server.
+export const FUEL_PRICES = { petrol: 105, diesel: 100 }; // Rs per litre
+export const FUEL_FREE_DELIVERY_LITRES = 5; // 5L or more => free delivery
+export const FUEL_DELIVERY_CHARGE = 100; // Rs, flat, waived at/above the litres above
+
+export function calculateFuelBill(fuelType, litres) {
+  const rate = FUEL_PRICES[fuelType] || 0;
+  const qty = Number(litres) || 0;
+  const fuelCost = Math.round(rate * qty);
+  const deliveryCharge = qty >= FUEL_FREE_DELIVERY_LITRES ? 0 : FUEL_DELIVERY_CHARGE;
+  return { rate, fuelCost, deliveryCharge, total: fuelCost + deliveryCharge };
+}
+
+// --- Flat Tyre Repair options -----------------------------------------
+export const TYRE_POSITIONS = {
+  car: [
+    { id: "front-left", label: "Front Left" },
+    { id: "front-right", label: "Front Right" },
+    { id: "back-left", label: "Back Left" },
+    { id: "back-right", label: "Back Right" },
+  ],
+  bike: [
+    { id: "front", label: "Front" },
+    { id: "back", label: "Back" },
+  ],
+};
+
+export const TYRE_PROBLEMS = [
+  { id: "puncture", label: "Puncture" },
+  { id: "air-fill", label: "Air Filling / Low Pressure" },
+  { id: "burst", label: "Tyre Burst" },
+  { id: "valve-issue", label: "Valve Issue / Leaking Air" },
+  { id: "replacement", label: "Full Tyre Replacement" },
+  { id: "alignment", label: "Alignment / Balancing Issue" },
+];

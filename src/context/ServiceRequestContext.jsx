@@ -43,6 +43,7 @@ function normalizeRequest(r) {
     recipientName: r.recipientName || null,
     recipientPhone: r.recipientPhone || null,
     manualAddress: r.manualAddress || null,
+    serviceDetails: r.serviceDetails || null,
     originalPrice: r.originalPrice ?? r.pricePerVisit,
     discountAmount: r.discountAmount || 0,
     couponCode: r.couponCode || null,
@@ -82,7 +83,13 @@ export function ServiceRequestProvider({ children }) {
     try {
       const { data } = await api.get("/notifications");
       setNotifications(
-        data.notifications.map((n) => ({ id: n._id, message: n.message, createdAt: n.createdAt, read: n.read }))
+        data.notifications.map((n) => ({
+          id: n._id,
+          message: n.message,
+          createdAt: n.createdAt,
+          read: n.read,
+          serviceRequestId: n.serviceRequest || null,
+        }))
       );
     } catch {
       setNotifications([]);
@@ -103,6 +110,7 @@ export function ServiceRequestProvider({ children }) {
     bookingForSomeoneElse,
     recipient,
     address,
+    serviceDetails,
     couponCode,
   }) => {
     const { data } = await api.post("/service-requests", {
@@ -115,6 +123,7 @@ export function ServiceRequestProvider({ children }) {
       recipientName: bookingForSomeoneElse ? recipient?.name : undefined,
       recipientPhone: bookingForSomeoneElse ? recipient?.phone : undefined,
       manualAddress: bookingForSomeoneElse ? address : undefined,
+      serviceDetails: serviceDetails || undefined,
       couponCode: couponCode || undefined,
     });
     await Promise.all([refreshRequests(), refreshNotifications()]);

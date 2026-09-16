@@ -12,8 +12,10 @@ import {
 } from "react-icons/fa";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import Button from "../components/common/Button";
+import ConfirmDialog from "../components/common/ConfirmDialog";
 import LiveTrackingMap from "../components/map/LiveTrackingMap";
 import RecipientLocationBadge from "../components/service/RecipientLocationBadge";
+import ServiceDetailsBadge from "../components/service/ServiceDetailsBadge";
 import {
   useServiceRequests,
   REQUEST_STATUSES,
@@ -41,6 +43,10 @@ function TrackService() {
   const [comment, setComment] = useState("");
   const [mechanicLocation, setMechanicLocation] = useState(null);
   const lastUpdateRef = useRef(null);
+
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
 
   // Live tracking: join this request's room and listen for the mechanic's
   // position while the job is active. Feeds both the map marker below and
@@ -88,6 +94,20 @@ function TrackService() {
   const handleSubmitReview = (e) => {
     e.preventDefault();
     addReview(request.id, { rating, comment });
+  };
+
+  const handleConfirmCancel = async () => {
+    setIsCancelling(true);
+    setCancelError("");
+    try {
+      await cancelRequest(request.id);
+      setShowCancelConfirm(false);
+    } catch (err) {
+      setCancelError(err.message || "Could not cancel this request.");
+      setShowCancelConfirm(false);
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   return (
@@ -146,6 +166,7 @@ function TrackService() {
           )}
 
           <RecipientLocationBadge request={request} />
+          <ServiceDetailsBadge request={request} />
 
           <div className="bg-white rounded-2xl border border-slate-100 p-6">
             <h2 className="font-semibold text-slate-900 mb-5">Request Status</h2>
@@ -305,19 +326,43 @@ function TrackService() {
                   Waiting for a mechanic to accept your request...
                 </p>
               )}
+
+              {cancelError && (
+                <p className="text-sm text-red-600 mb-3">{cancelError}</p>
+              )}
+
               {canCancel && (
                 <Button
                   variant="outline"
                   className="w-full justify-center"
-                  onClick={() => cancelRequest(request.id)}
+                  onClick={() => setShowCancelConfirm(true)}
                 >
                   Cancel Request
                 </Button>
+              )}
+
+              {!canCancel && request.status !== "Pending" && (
+                <p className="text-xs text-slate-400">
+                  Your mechanic is already on the job — this request can no
+                  longer be cancelled from here.
+                </p>
               )}
             </div>
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={handleConfirmCancel}
+        isLoading={isCancelling}
+        variant="danger"
+        title="Cancel this request?"
+        message={`Your ${request.serviceTitle} request to ${request.mechanic?.name} will be cancelled. You'll need to book again if you still need help.`}
+        confirmLabel="Yes, cancel it"
+        cancelLabel="No, keep it"
+      />
     </DashboardLayout>
   );
 }

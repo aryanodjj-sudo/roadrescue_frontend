@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import Button from "../components/common/Button";
-import { servicesData } from "../data/servicesData";
+import { servicesData, calculateFuelBill, TYRE_POSITIONS, TYRE_PROBLEMS } from "../data/servicesData";
 import { useServiceRequests } from "../context/ServiceRequestContext";
 import { useSubscription } from "../context/SubscriptionContext";
 import api from "../utils/api";
@@ -31,10 +31,19 @@ function BookingConfirmation() {
     bookingForSomeoneElse,
     recipient,
     address,
+    serviceDetails,
   } = location.state || {};
 
   const service = servicesData.find((s) => s.id === serviceType);
-
+  const isFuel = serviceType === "fuel" && !!serviceDetails;
+  const isTyre = serviceType === "tyre" && !!serviceDetails;
+  const fuelBill = isFuel ? calculateFuelBill(serviceDetails.fuelType, serviceDetails.litres) : null;
+  const tyrePositionLabel = isTyre
+    ? TYRE_POSITIONS[serviceDetails.tyreVehicleType]?.find((p) => p.id === serviceDetails.tyrePosition)?.label
+    : null;
+  const tyreProblemLabel = isTyre
+    ? TYRE_PROBLEMS.find((p) => p.id === serviceDetails.tyreProblem)?.label
+    : null;
   const [status, setStatus] = useState(mechanic ? "review" : "missing");
   const [error, setError] = useState("");
   const [createdRequest, setCreatedRequest] = useState(null);
@@ -61,7 +70,7 @@ function BookingConfirmation() {
     );
   }
 
-  const originalPrice = mechanic.pricePerVisit || 0;
+  const originalPrice = isFuel ? fuelBill.total : mechanic.pricePerVisit || 0;
   const discountAmount = hasActiveSubscription ? originalPrice : appliedCoupon?.discountAmount || 0;
   const finalPrice = hasActiveSubscription ? 0 : appliedCoupon?.finalAmount ?? originalPrice;
 
@@ -102,6 +111,7 @@ function BookingConfirmation() {
         bookingForSomeoneElse,
         recipient,
         address,
+        serviceDetails,
         couponCode: !hasActiveSubscription ? appliedCoupon?.code : undefined,
       });
       setCreatedRequest(req);
@@ -248,6 +258,26 @@ function BookingConfirmation() {
                 <FaClock className="text-primary-600" />
                 <span className="text-slate-700">Estimated arrival: {mechanic.etaMinutes} min</span>
               </div>
+              {isFuel && (
+                <div className="text-sm border-t border-slate-100 pt-4">
+                  <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1.5">
+                    Fuel Order
+                  </p>
+                  <p className="text-slate-700 capitalize">
+                    {serviceDetails.litres}L {serviceDetails.fuelType}
+                  </p>
+                </div>
+              )}
+              {isTyre && (
+                <div className="text-sm border-t border-slate-100 pt-4">
+                  <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1.5">
+                    Tyre Details
+                  </p>
+                  <p className="text-slate-700">
+                    {serviceDetails.tyreVehicleType === "car" ? "Car" : "Bike"} · {tyrePositionLabel} tyre · {tyreProblemLabel}
+                  </p>
+                </div>
+              )}
               {description && (
                 <div className="text-sm border-t border-slate-100 pt-4">
                   <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mb-1.5">
@@ -324,10 +354,36 @@ function BookingConfirmation() {
             )}
 
             <div className="space-y-2 text-sm border-t border-slate-100 pt-4 mt-4">
-              <div className="flex justify-between text-slate-500">
-                <span>Service charge</span>
-                <span>₹{originalPrice}</span>
-              </div>
+  {isFuel ? (
+    <>
+      <div className="flex justify-between text-slate-500">
+        <span className="capitalize">
+          {serviceDetails.fuelType} ({serviceDetails.litres}L × ₹{fuelBill.rate})
+        </span>
+        <span>₹{fuelBill.fuelCost}</span>
+      </div>
+
+      <div className="flex justify-between text-slate-500">
+        <span>Delivery charge</span>
+        <span
+          className={
+            fuelBill.deliveryCharge === 0
+              ? "text-green-600 font-medium"
+              : ""
+          }
+        >
+          {fuelBill.deliveryCharge === 0
+            ? "FREE"
+            : `₹${fuelBill.deliveryCharge}`}
+        </span>
+      </div>
+    </>
+  ) : (
+    <div className="flex justify-between text-slate-500">
+      <span>Service charge</span>
+      <span>₹{originalPrice}</span>
+    </div>
+  )}
               {discountAmount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Discount {hasActiveSubscription ? "(Subscription)" : appliedCoupon ? `(${appliedCoupon.code})` : ""}</span>

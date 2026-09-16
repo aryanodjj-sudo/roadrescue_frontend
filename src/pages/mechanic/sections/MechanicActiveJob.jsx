@@ -9,6 +9,7 @@ import {
 import Button from "../../../components/common/Button";
 import LiveTrackingMap from "../../../components/map/LiveTrackingMap";
 import RecipientLocationBadge from "../../../components/service/RecipientLocationBadge";
+import ServiceDetailsBadge from "../../../components/service/ServiceDetailsBadge";
 import { formatDateTime } from "../../../utils/formatDate";
 
 function MechanicActiveJob({
@@ -76,6 +77,7 @@ function MechanicActiveJob({
 
           <div className="mb-5">
             <RecipientLocationBadge request={activeJob} />
+            <ServiceDetailsBadge request={activeJob} />
           </div>
 
           {activeJob.customerLocation && (

@@ -1,13 +1,15 @@
-import { FaStar, FaMapMarkerAlt, FaClock, FaCheckCircle } from "react-icons/fa";
-import Button from "../common/Button";
+import { FaStar, FaMapMarkerAlt, FaClock, FaCheckCircle, FaArrowRight } from "react-icons/fa";
 import { formatPrice } from "../../utils/formatPrice";
 
-function MechanicCard({ mechanic, isSelected, onSelect }) {
+// priceOverride: { label, value } — when set (e.g. Fuel Delivery), shows a
+// flat delivery charge instead of the mechanic's own pricePerVisit, since
+// for that service every mechanic charges the customer the same amount.
+function MechanicCard({ mechanic, onSelect, priceOverride }) {
   return (
-    <div
-      className={`bg-white rounded-2xl p-5 border-2 transition-colors ${
-        isSelected ? "border-primary-600" : "border-slate-100"
-      }`}
+    <button
+      type="button"
+      onClick={() => onSelect(mechanic)}
+      className="text-left bg-white rounded-2xl p-5 border-2 border-slate-100 hover:border-primary-600 transition-colors w-full"
     >
       <div className="flex items-start gap-4">
         <img
@@ -56,19 +58,18 @@ function MechanicCard({ mechanic, isSelected, onSelect }) {
 
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
         <div>
-          <p className="text-xs text-slate-400">Estimated cost</p>
+          <p className="text-xs text-slate-400">
+            {priceOverride ? priceOverride.label : "Estimated cost"}
+          </p>
           <p className="font-bold text-slate-900">
-            {formatPrice(mechanic.pricePerVisit)}
+            {priceOverride ? formatPrice(priceOverride.value) : formatPrice(mechanic.pricePerVisit)}
           </p>
         </div>
-        <Button
-          variant={isSelected ? "primary" : "outline"}
-          onClick={() => onSelect(mechanic)}
-        >
-          {isSelected ? "Selected" : "Select"}
-        </Button>
+        <span className="flex items-center gap-1.5 text-primary-600 font-semibold text-sm">
+          Select <FaArrowRight className="text-xs" />
+        </span>
       </div>
-    </div>
+    </button>
   );
 }
 

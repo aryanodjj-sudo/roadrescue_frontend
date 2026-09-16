@@ -1,6 +1,7 @@
 import { FaBolt, FaClipboardList, FaCarSide, FaTimes } from "react-icons/fa";
 import Button from "../../../components/common/Button";
 import RecipientLocationBadge from "../../../components/service/RecipientLocationBadge";
+import ServiceDetailsBadge from "../../../components/service/ServiceDetailsBadge";
 import { formatDateTime } from "../../../utils/formatDate";
 
 function MechanicIncomingRequests({
@@ -70,6 +71,7 @@ function MechanicIncomingRequests({
               )}
 
               <RecipientLocationBadge request={req} />
+              <ServiceDetailsBadge request={req} />
 
               {req.description && (
                 <p className="text-sm text-slate-500">"{req.description}"</p>
