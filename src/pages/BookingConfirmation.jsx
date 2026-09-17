@@ -38,12 +38,18 @@ function BookingConfirmation() {
   const isFuel = serviceType === "fuel" && !!serviceDetails;
   const isTyre = serviceType === "tyre" && !!serviceDetails;
   const fuelBill = isFuel ? calculateFuelBill(serviceDetails.fuelType, serviceDetails.litres) : null;
-  const tyrePositionLabel = isTyre
-    ? TYRE_POSITIONS[serviceDetails.tyreVehicleType]?.find((p) => p.id === serviceDetails.tyrePosition)?.label
-    : null;
-  const tyreProblemLabel = isTyre
-    ? TYRE_PROBLEMS.find((p) => p.id === serviceDetails.tyreProblem)?.label
-    : null;
+  const tyrePositionLabels = isTyre
+  ? (serviceDetails.tyrePositions || [])
+      .map((id) => TYRE_POSITIONS[serviceDetails.tyreVehicleType]?.find((p) => p.id === id)?.label)
+      .filter(Boolean)
+      .join(", ")
+  : null;
+const tyreProblemLabels = isTyre
+  ? (serviceDetails.tyreProblems || [])
+      .map((id) => TYRE_PROBLEMS.find((p) => p.id === id)?.label)
+      .filter(Boolean)
+      .join(", ")
+  : null;
   const [status, setStatus] = useState(mechanic ? "review" : "missing");
   const [error, setError] = useState("");
   const [createdRequest, setCreatedRequest] = useState(null);
@@ -274,8 +280,9 @@ function BookingConfirmation() {
                     Tyre Details
                   </p>
                   <p className="text-slate-700">
-                    {serviceDetails.tyreVehicleType === "car" ? "Car" : "Bike"} · {tyrePositionLabel} tyre · {tyreProblemLabel}
-                  </p>
+  {serviceDetails.tyreVehicleType === "car" ? "Car" : "Bike"} · {tyrePositionLabels} tyre
+  {(serviceDetails.tyrePositions?.length || 0) > 1 ? "s" : ""} · {tyreProblemLabels}
+</p>
                 </div>
               )}
               {description && (

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FaStar,
   FaArrowRight,
@@ -41,6 +41,7 @@ const stagger = {
 
 function Home() {
   const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();   
   const [openFaq, setOpenFaq] = useState(0);
 
   // "Get Assistance" / "Find Mechanic" are vehicle-owner actions. If a
@@ -62,6 +63,20 @@ function Home() {
     : user.role === "user"
     ? "/dashboard/subscription"
     : getDashboardPath(user.role);
+    // Service card click hone par decide karta hai kahan bhejna hai
+  const handleServiceClick = (serviceId) => {
+    if (!isAuthenticated) {
+      navigate("/login", {
+        state: { redirectTo: "/dashboard/services", openService: serviceId },
+      });
+      return;
+    }
+    if (user.role !== "user") {
+      navigate(getDashboardPath(user.role));
+      return;
+    }
+    navigate("/dashboard/services", { state: { openService: serviceId } });
+  };
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
@@ -261,9 +276,17 @@ function Home() {
               const Icon = service.icon;
               return (
                 <motion.div key={service.id} variants={fadeUp}>
-                  <Link
-                    to={assistancePath}
-                    className="group block h-full bg-white rounded-2xl p-7 border border-slate-100 hover:border-primary-200 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300"
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleServiceClick(service.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleServiceClick(service.id);
+                      }
+                    }}
+                    className="group block h-full bg-white rounded-2xl p-7 border border-slate-100 hover:border-primary-200 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                   >
                     <div className="w-14 h-14 rounded-2xl bg-primary-50 group-hover:bg-primary-600 flex items-center justify-center mb-5 transition-colors duration-300">
                       <Icon className="text-2xl text-primary-600 group-hover:text-white transition-colors duration-300" />
@@ -277,7 +300,7 @@ function Home() {
                     <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity">
                       Request now <FaArrowRight className="text-xs" />
                     </span>
-                  </Link>
+                  </div>
                 </motion.div>
               );
             })}

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FaUser, FaEnvelope, FaLock, FaCarSide, FaTools, FaUserShield } from "react-icons/fa";
+import { FaUser, FaEnvelope, FaCarSide, FaTools, FaUserShield } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import Button from "../components/common/Button";
+import PasswordInput from "../components/common/PasswordInput";
 import {
   isNonEmpty,
   isValidEmail,
@@ -180,36 +181,28 @@ function Register() {
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Password
             </label>
-            <div className="relative">
-              <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                placeholder="At least 6 characters"
-                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
+            <PasswordInput
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              placeholder="At least 6 characters"
+              autoComplete="new-password"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Confirm Password
             </label>
-            <div className="relative">
-              <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                placeholder="Re-enter password"
-                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
+            <PasswordInput
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              placeholder="Re-enter password"
+              autoComplete="new-password"
+            />
           </div>
 
           <Button

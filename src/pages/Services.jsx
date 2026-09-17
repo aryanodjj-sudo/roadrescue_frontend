@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { FaUserFriends, FaTools, FaChevronDown, FaGasPump } from "react-icons/fa";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { FaUserFriends, FaTools, FaChevronDown, FaGasPump, FaCheck } from "react-icons/fa";
 import { PiTireLight } from "react-icons/pi";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import Button from "../components/common/Button";
@@ -38,10 +39,13 @@ function ToggleTwo({ leftLabel, rightLabel, value, leftValue, rightValue, onChan
 
 function Services() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { vehicles } = useVehicles();
   const [selectedVehicle, setSelectedVehicle] = useState(vehicles[0]?.id || "");
   const [expandedService, setExpandedService] = useState(null);
 
+  const [highlightService, setHighlightService] = useState(null);
+  const cardRefs = useRef({});
   // --- Fields shared by every service (reset whenever a different
   // service card is expanded, via selectService() below) -------------
   const [description, setDescription] = useState("");
@@ -53,12 +57,39 @@ function Services() {
   const [fuelType, setFuelType] = useState("petrol");
   const [fuelLitres, setFuelLitres] = useState("");
 
-  // --- Flat Tyre Repair specific fields ---------------------------------
-  const [tyreVehicleType, setTyreVehicleType] = useState("car");
-  const [tyrePosition, setTyrePosition] = useState("");
-  const [tyreProblem, setTyreProblem] = useState("");
+// --- Flat Tyre Repair specific fields ---------------------------------
+// Multiple tyres can be affected, and each can have more than one
+// problem, so both are kept as arrays instead of single values.
+const [tyreVehicleType, setTyreVehicleType] = useState("car");
+const [tyrePositions, setTyrePositions] = useState([]);
+const [tyreProblems, setTyreProblems] = useState([]);
 
-  const [formError, setFormError] = useState("");
+const [formError, setFormError] = useState("");
+
+const resetServiceFields = () => {
+  setFormError("");
+  setDescription("");
+  setBookingForSomeoneElse(false);
+  setRecipient({ name: "", phone: "" });
+  setAddress({ line: "", landmark: "", city: "", pincode: "" });
+  setFuelType("petrol");
+  setFuelLitres("");
+  setTyreVehicleType("car");
+  setTyrePositions([]);
+  setTyreProblems([]);
+};
+
+const toggleTyrePosition = (id) => {
+  setTyrePositions((prev) =>
+    prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+  );
+};
+
+const toggleTyreProblem = (id) => {
+  setTyreProblems((prev) =>
+    prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+  );
+};
 
   const selectService = (id) => {
     if (expandedService === id) {
@@ -66,17 +97,36 @@ function Services() {
       return;
     }
     setExpandedService(id);
-    setFormError("");
-    setDescription("");
-    setBookingForSomeoneElse(false);
-    setRecipient({ name: "", phone: "" });
-    setAddress({ line: "", landmark: "", city: "", pincode: "" });
-    setFuelType("petrol");
-    setFuelLitres("");
-    setTyreVehicleType("car");
-    setTyrePosition("");
-    setTyreProblem("");
+    resetServiceFields();
   };
+
+  // Homepage se ya login ke baad jo service bheji gayi hai usko
+  // auto-expand + scroll + highlight karta hai
+  useEffect(() => {
+    const targetId = location.state?.openService;
+    if (!targetId || !servicesData.some((s) => s.id === targetId)) return;
+
+    setExpandedService(targetId);
+    resetServiceFields();
+    setHighlightService(targetId);
+
+    const scrollTimer = setTimeout(() => {
+      cardRefs.current[targetId]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 150);
+
+    const highlightTimer = setTimeout(() => setHighlightService(null), 2200);
+
+    navigate(location.pathname, { replace: true, state: {} });
+
+    return () => {
+      clearTimeout(scrollTimer);
+      clearTimeout(highlightTimer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   const recipientValid =
     !bookingForSomeoneElse ||
@@ -108,12 +158,12 @@ function Services() {
     }
 
     if (service.id === "tyre") {
-      if (!tyreVehicleType || !tyrePosition || !tyreProblem) {
-        setFormError("Select vehicle type, tyre position, and the problem.");
-        return;
-      }
-      serviceDetails = { tyreVehicleType, tyrePosition, tyreProblem };
-    }
+  if (!tyreVehicleType || tyrePositions.length === 0 || tyreProblems.length === 0) {
+    setFormError("Select at least one tyre and at least one problem.");
+    return;
+  }
+  serviceDetails = { tyreVehicleType, tyrePositions, tyreProblems };
+}
 
     const params = new URLSearchParams({ service: service.id, vehicle: selectedVehicle });
     navigate(`/dashboard/find-mechanic?${params.toString()}`, {
@@ -180,12 +230,20 @@ function Services() {
           const Icon = service.icon;
           const isExpanded = expandedService === service.id;
 
+          const isHighlighted = highlightService === service.id;
+
           return (
             <div
               key={service.id}
-              className={`bg-white rounded-2xl border-2 transition-colors overflow-hidden ${
+              ref={(el) => (cardRefs.current[service.id] = el)}
+              className={`bg-white rounded-2xl border-2 overflow-hidden transition-shadow duration-500 ${
                 isExpanded ? "border-primary-600" : "border-slate-100 hover:border-primary-200"
+              } ${
+                isHighlighted
+                  ? "ring-4 ring-primary-200 shadow-lg shadow-primary-100"
+                  : "ring-0 ring-transparent"
               }`}
+              style={{ transition: "box-shadow 0.5s ease, border-color 0.3s ease" }}
             >
               <button
                 type="button"
@@ -193,7 +251,7 @@ function Services() {
                 className="w-full flex items-center gap-4 text-left p-5"
               >
                 <div
-                  className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+                  className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-300 ${
                     isExpanded ? "bg-primary-600" : "bg-primary-50"
                   }`}
                 >
@@ -204,12 +262,23 @@ function Services() {
                   <p className="text-sm text-slate-500 mt-0.5">{service.description}</p>
                 </div>
                 <FaChevronDown
-                  className={`text-slate-400 shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                  className={`text-slate-400 shrink-0 transition-transform duration-300 ${
+                    isExpanded ? "rotate-180" : ""
+                  }`}
                 />
               </button>
 
-              {isExpanded && (
-                <div className="px-5 pb-5 pt-1 border-t border-slate-100 space-y-5">
+              <AnimatePresence initial={false}>
+                {isExpanded && (
+                  <motion.div
+                    key="expanded-content"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-5 pb-5 pt-1 border-t border-slate-100 space-y-5">
                   {/* --- Fuel Delivery fields --- */}
                   {service.id === "fuel" && (
                     <div className="bg-slate-50 rounded-xl p-4">
@@ -270,69 +339,139 @@ function Services() {
                     </div>
                   )}
 
-                  {/* --- Flat Tyre Repair fields --- */}
-                  {service.id === "tyre" && (
-                    <div className="bg-slate-50 rounded-xl p-4 space-y-4">
-                      <p className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                        <PiTireLight className="text-primary-600" /> Tyre Details
-                      </p>
+{/* --- Flat Tyre Repair fields --- */}
+{service.id === "tyre" && (
+  <div className="bg-slate-50 rounded-xl p-4 space-y-5">
+    <p className="text-sm font-medium text-slate-700 flex items-center gap-2">
+      <PiTireLight className="text-primary-600" /> Tyre Details
+    </p>
 
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                          Vehicle Type
-                        </label>
-                        <ToggleTwo
-                          value={tyreVehicleType}
-                          onChange={(v) => {
-                            setTyreVehicleType(v);
-                            setTyrePosition("");
-                          }}
-                          leftValue="car"
-                          leftLabel="Car"
-                          rightValue="bike"
-                          rightLabel="Bike"
-                        />
-                      </div>
+    <div>
+      <label className="block text-xs font-medium text-slate-500 mb-1.5">
+        Vehicle Type
+      </label>
+      <ToggleTwo
+        value={tyreVehicleType}
+        onChange={(v) => {
+          setTyreVehicleType(v);
+          setTyrePositions([]);
+        }}
+        leftValue="car"
+        leftLabel="Car"
+        rightValue="bike"
+        rightLabel="Bike"
+      />
+    </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                          Which Tyre?
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {TYRE_POSITIONS[tyreVehicleType].map((pos) => (
-                            <button
-                              key={pos.id}
-                              type="button"
-                              onClick={() => setTyrePosition(pos.id)}
-                              className={`py-2.5 rounded-lg text-sm font-medium border-2 transition-colors ${
-                                tyrePosition === pos.id
-                                  ? "border-primary-600 bg-primary-50 text-primary-700"
-                                  : "border-slate-200 bg-white text-slate-600"
-                              }`}
-                            >
-                              {pos.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+    {/* Which tyre(s) — multi-select, since more than one
+        tyre can have an issue at the same time */}
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="block text-xs font-medium text-slate-500">
+          Which Tyre(s)?{" "}
+          <span className="text-slate-400 font-normal">select all that apply</span>
+        </label>
+        {tyrePositions.length > 0 && (
+          <span className="text-[11px] font-semibold text-primary-600 bg-primary-100 px-2 py-0.5 rounded-full shrink-0">
+            {tyrePositions.length} selected
+          </span>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {TYRE_POSITIONS[tyreVehicleType].map((pos) => {
+          const active = tyrePositions.includes(pos.id);
+          return (
+            <button
+              key={pos.id}
+              type="button"
+              onClick={() => toggleTyrePosition(pos.id)}
+              aria-pressed={active}
+              className={`flex items-center gap-2 py-2.5 px-3 rounded-lg text-sm font-medium border-2 transition-colors ${
+                active
+                  ? "border-primary-600 bg-primary-50 text-primary-700"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-primary-200"
+              }`}
+            >
+              <span
+                className={`flex items-center justify-center w-4 h-4 rounded-[5px] border-2 shrink-0 transition-colors ${
+                  active ? "bg-primary-600 border-primary-600" : "border-slate-300 bg-white"
+                }`}
+              >
+                {active && <FaCheck className="text-[9px] text-white" />}
+              </span>
+              {pos.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                          What's the Problem?
-                        </label>
-                        <select
-                          value={tyreProblem}
-                          onChange={(e) => setTyreProblem(e.target.value)}
-                          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-                        >
-                          <option value="">Select an issue...</option>
-                          {TYRE_PROBLEMS.map((p) => (
-                            <option key={p.id} value={p.id}>{p.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  )}
+    {/* What's the problem — multi-select chips, since a
+        tyre (or set of tyres) can have more than one issue */}
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <label className="block text-xs font-medium text-slate-500">
+          What's the Problem?{" "}
+          <span className="text-slate-400 font-normal">select all that apply</span>
+        </label>
+        {tyreProblems.length > 0 && (
+          <span className="text-[11px] font-semibold text-primary-600 bg-primary-100 px-2 py-0.5 rounded-full shrink-0">
+            {tyreProblems.length} selected
+          </span>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {TYRE_PROBLEMS.map((p) => {
+          const active = tyreProblems.includes(p.id);
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => toggleTyreProblem(p.id)}
+              aria-pressed={active}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium border-2 transition-colors ${
+                active
+                  ? "border-primary-600 bg-primary-600 text-white shadow-sm shadow-primary-200"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-primary-200"
+              }`}
+            >
+              {active && <FaCheck className="text-[10px]" />}
+              {p.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+
+    {/* Live summary so the user can double-check everything
+        they picked before continuing */}
+    {(tyrePositions.length > 0 || tyreProblems.length > 0) && (
+      <div className="bg-white rounded-lg px-4 py-3 text-xs text-slate-500 border border-slate-100 leading-relaxed">
+        <span className="font-semibold text-slate-600">Summary: </span>
+        {tyreVehicleType === "car" ? "Car" : "Bike"}
+        {tyrePositions.length > 0 && (
+          <>
+            {" · "}
+            {tyrePositions
+              .map((id) => TYRE_POSITIONS[tyreVehicleType].find((pos) => pos.id === id)?.label)
+              .filter(Boolean)
+              .join(", ")}{" "}
+            tyre{tyrePositions.length > 1 ? "s" : ""}
+          </>
+        )}
+        {tyreProblems.length > 0 && (
+          <>
+            {" · "}
+            {tyreProblems
+              .map((id) => TYRE_PROBLEMS.find((prob) => prob.id === id)?.label)
+              .filter(Boolean)
+              .join(", ")}
+          </>
+        )}
+      </div>
+    )}
+  </div>
+)}
 
                   {/* --- Book for yourself / someone else --- */}
                   <div>
@@ -458,8 +597,10 @@ function Services() {
                   >
                     Continue
                   </Button>
-                </div>
-              )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}

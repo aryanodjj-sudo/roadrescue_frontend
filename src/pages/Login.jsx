@@ -1,14 +1,18 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FaEnvelope, FaLock, FaCarSide, FaTools, FaUserShield } from "react-icons/fa";
+import { FaEnvelope, FaCarSide, FaTools, FaUserShield } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import Button from "../components/common/Button";
+import PasswordInput from "../components/common/PasswordInput";
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();   
   const { login } = useAuth();
 
+  const redirectTo = location.state?.redirectTo;   
+  const openService = location.state?.openService; 
   const [role, setRole] = useState("user");
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
@@ -31,6 +35,11 @@ function Login() {
         navigate("/mechanic/dashboard");
       } else if (loggedInUser.role === "admin") {
         navigate("/admin/dashboard");
+      } else if (redirectTo) {
+        navigate(redirectTo, {
+          replace: true,
+          state: openService ? { openService } : undefined,
+        });
       } else {
         navigate("/dashboard"); // FIXED: was navigating to "/" before
       }
@@ -127,18 +136,14 @@ function Login() {
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Password
             </label>
-            <div className="relative">
-              <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                placeholder="••••••••"
-                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
+            <PasswordInput
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              placeholder="••••••••"
+              autoComplete="current-password"
+            />
           </div>
 
           <Button
