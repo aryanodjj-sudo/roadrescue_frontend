@@ -28,36 +28,38 @@ import NotFound from "./pages/NotFound";
 
 function App() {
   return (
-    <Routes>
+    <>
       <ScrollToTop />
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/about" element={<AboutUs />} />
-      <Route path="/partner" element={<BecomePartner />} />
-      <Route path="/careers" element={<Careers />} />
-      <Route path="/contact" element={<Contact />} />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/partner" element={<BecomePartner />} />
+        <Route path="/careers" element={<Careers />} />
+        <Route path="/contact" element={<Contact />} />
 
-      <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["user"]}><Dashboard /></ProtectedRoute>} />
-      <Route path="/dashboard/vehicles" element={<ProtectedRoute allowedRoles={["user"]}><Vehicles /></ProtectedRoute>} />
-      <Route path="/dashboard/vehicles/:id" element={<ProtectedRoute allowedRoles={["user"]}><VehicleDetails /></ProtectedRoute>} />
-      <Route path="/dashboard/profile" element={<ProtectedRoute allowedRoles={["user"]}><Profile /></ProtectedRoute>} />
-      <Route path="/dashboard/services" element={<ProtectedRoute allowedRoles={["user"]}><Services /></ProtectedRoute>} />
-      <Route path="/dashboard/find-mechanic" element={<ProtectedRoute allowedRoles={["user"]}><FindMechanic /></ProtectedRoute>} />
-      <Route path="/dashboard/booking" element={<ProtectedRoute allowedRoles={["user"]}><BookingConfirmation /></ProtectedRoute>} />
-      <Route path="/dashboard/history" element={<ProtectedRoute allowedRoles={["user"]}><ServiceHistory /></ProtectedRoute>} />
-      <Route path="/dashboard/reviews" element={<ProtectedRoute allowedRoles={["user"]}><MyReviews /></ProtectedRoute>} />
-      <Route path="/dashboard/track/:id" element={<ProtectedRoute allowedRoles={["user"]}><TrackService /></ProtectedRoute>} />
-      <Route path="/dashboard/invoice/:id" element={<ProtectedRoute allowedRoles={["user"]}><Invoice /></ProtectedRoute>} />
-      <Route path="/dashboard/subscription" element={<ProtectedRoute allowedRoles={["user"]}><Subscription /></ProtectedRoute>} />
-      <Route path="/dashboard/notifications" element={<ProtectedRoute allowedRoles={["user"]}><Notifications /></ProtectedRoute>} />
-      <Route path="/dashboard/complaints" element={<ProtectedRoute allowedRoles={["user"]}><Complaints /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["user"]}><Dashboard /></ProtectedRoute>} />
+        <Route path="/dashboard/vehicles" element={<ProtectedRoute allowedRoles={["user"]}><Vehicles /></ProtectedRoute>} />
+        <Route path="/dashboard/vehicles/:id" element={<ProtectedRoute allowedRoles={["user"]}><VehicleDetails /></ProtectedRoute>} />
+        <Route path="/dashboard/profile" element={<ProtectedRoute allowedRoles={["user"]}><Profile /></ProtectedRoute>} />
+        <Route path="/dashboard/services" element={<ProtectedRoute allowedRoles={["user"]}><Services /></ProtectedRoute>} />
+        <Route path="/dashboard/find-mechanic" element={<ProtectedRoute allowedRoles={["user"]}><FindMechanic /></ProtectedRoute>} />
+        <Route path="/dashboard/booking" element={<ProtectedRoute allowedRoles={["user"]}><BookingConfirmation /></ProtectedRoute>} />
+        <Route path="/dashboard/history" element={<ProtectedRoute allowedRoles={["user"]}><ServiceHistory /></ProtectedRoute>} />
+        <Route path="/dashboard/reviews" element={<ProtectedRoute allowedRoles={["user"]}><MyReviews /></ProtectedRoute>} />
+        <Route path="/dashboard/track/:id" element={<ProtectedRoute allowedRoles={["user"]}><TrackService /></ProtectedRoute>} />
+        <Route path="/dashboard/invoice/:id" element={<ProtectedRoute allowedRoles={["user"]}><Invoice /></ProtectedRoute>} />
+        <Route path="/dashboard/subscription" element={<ProtectedRoute allowedRoles={["user"]}><Subscription /></ProtectedRoute>} />
+        <Route path="/dashboard/notifications" element={<ProtectedRoute allowedRoles={["user"]}><Notifications /></ProtectedRoute>} />
+        <Route path="/dashboard/complaints" element={<ProtectedRoute allowedRoles={["user"]}><Complaints /></ProtectedRoute>} />
 
-      <Route path="/mechanic/dashboard" element={<ProtectedRoute allowedRoles={["mechanic"]}><MechanicDashboard /></ProtectedRoute>} />
-      <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/mechanic/dashboard" element={<ProtectedRoute allowedRoles={["mechanic"]}><MechanicDashboard /></ProtectedRoute>} />
+        <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
 
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 }
 
