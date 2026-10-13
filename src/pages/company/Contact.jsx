@@ -16,6 +16,7 @@ import Footer from "../../components/common/Footer";
 import Button from "../../components/common/Button";
 import api from "../../utils/api";
 import { SOCIAL_LINKS } from "../../data/socialLinks";
+import { useToast } from "../../context/ToastContext";
 
 const contactDetails = [
   {
@@ -39,6 +40,7 @@ const contactDetails = [
 ];
 
 function Contact() {
+  const toast = useToast();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -69,6 +71,7 @@ function Contact() {
       });
 
       setStatus("success");
+      toast.success("Message sent — we'll reply within 1-2 business days.");
 
       setForm({
         name: "",
@@ -79,11 +82,12 @@ function Contact() {
     } catch (err) {
       setStatus("error");
 
-      setError(
+      const message =
         err?.response?.data?.message ||
           err?.message ||
-          "Something went wrong. Please try again."
-      );
+          "Something went wrong. Please try again.";
+      setError(message);
+      toast.error(message);
     }
   };
 

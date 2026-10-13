@@ -3,6 +3,7 @@ import { FaPlus, FaExclamationTriangle, FaBalanceScale } from "react-icons/fa";
 import Button from "../common/Button";
 import api from "../../utils/api";
 import { useServiceRequests } from "../../context/ServiceRequestContext";
+import { useToast } from "../../context/ToastContext";
 
 const STATUS_STYLES = {
   Pending: "bg-amber-50 text-amber-600",
@@ -25,7 +26,7 @@ function StatusPill({ status }) {
 function ComplaintsPanel() {
   const { getAllRequests } = useServiceRequests();
   const relatedRequests = getAllRequests();
-
+  const toast = useToast();
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -81,8 +82,11 @@ function ComplaintsPanel() {
       resetForm();
       setFormOpen(false);
       await loadComplaints();
+      toast.success(`${type} submitted — our team will review it shortly.`);
     } catch (err) {
-      setSubmitError(err.message || "Couldn't submit this right now.");
+      const message = err.message || "Couldn't submit this right now.";
+      setSubmitError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }

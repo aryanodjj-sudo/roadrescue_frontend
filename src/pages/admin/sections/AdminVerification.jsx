@@ -3,6 +3,7 @@ import { FaCheck, FaTimes } from "react-icons/fa";
 import Button from "../../../components/common/Button";
 import api from "../../../utils/api";
 import { formatDate } from "../../../utils/formatDate";
+import { useToast } from "../../../context/ToastContext";
 
 const SERVICE_LABELS = {
   breakdown: "Breakdown Repair",
@@ -13,6 +14,7 @@ const SERVICE_LABELS = {
 };
 
 function AdminVerification() {
+  const toast = useToast();
   const [mechanics, setMechanics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -45,8 +47,11 @@ function AdminVerification() {
       const { data } = await api.put(`/admin/mechanics/${id}/verify`, { status });
       setMechanics((prev) => prev.map((m) => (m._id === id ? data.mechanic : m)));
       setSelected(null);
+      toast.success(status === "Approved" ? "Mechanic approved" : "Mechanic rejected");
     } catch (err) {
-      setError(err.message || "Couldn't update verification status.");
+      const message = err.message || "Couldn't update verification status.";
+      setError(message);
+      toast.error(message);
     } finally {
       setActioningId(null);
     }

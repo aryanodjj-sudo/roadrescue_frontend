@@ -6,6 +6,7 @@ import Footer from "../../components/common/Footer";
 import SectionHeading from "../../components/common/SectionHeading";
 import Button from "../../components/common/Button";
 import api from "../../utils/api";
+import { useToast } from "../../context/ToastContext";
 
 const benefits = [
   {
@@ -26,6 +27,7 @@ const benefits = [
 ];
 
 function BecomePartner() {
+  const toast = useToast();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -54,10 +56,13 @@ function BecomePartner() {
         message: form.message,
       });
       setStatus("success");
+      toast.success("Application received — we'll be in touch soon!");
       setForm({ name: "", email: "", phone: "", city: "", message: "" });
     } catch (err) {
       setStatus("error");
-      setError(err.message || "Something went wrong. Please try again.");
+      const message = err.message || "Something went wrong. Please try again.";
+      setError(message);
+      toast.error(message);
     }
   };
 

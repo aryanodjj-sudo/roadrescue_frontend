@@ -4,7 +4,7 @@ import Button from "../../../components/common/Button";
 import StatCard from "../../../components/admin/StatCard";
 import api from "../../../utils/api";
 import { formatDateTime } from "../../../utils/formatDate";
-
+import { useToast } from "../../../context/ToastContext";
 const STATUS_STYLES = {
   Pending: "bg-amber-50 text-amber-600",
   "In Progress": "bg-blue-50 text-blue-600",
@@ -24,6 +24,7 @@ function StatusPill({ status }) {
 // filterType: "Complaint" | "Dispute" | undefined (undefined = show both,
 // used if this section is ever rendered without a sidebar-driven filter).
 function AdminComplaintsDisputes({ filterType }) {
+  const toast = useToast();
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -67,8 +68,11 @@ function AdminComplaintsDisputes({ filterType }) {
       });
       setComplaints((prev) => prev.map((c) => (c._id === selected._id ? data.complaint : c)));
       setSelected(null);
+      toast.success(`${selected.type} marked as "${statusDraft}"`);
     } catch (err) {
-      setSaveError(err.message || "Couldn't update status.");
+      const message = err.message || "Couldn't update status.";
+      setSaveError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }

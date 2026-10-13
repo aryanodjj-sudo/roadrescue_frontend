@@ -4,6 +4,7 @@ import Button from "../../../components/common/Button";
 import StatCard from "../../../components/admin/StatCard";
 import api from "../../../utils/api";
 import { formatDateTime } from "../../../utils/formatDate";
+import { useToast } from "../../../context/ToastContext";
 
 const EMPTY_FORM = {
   code: "",
@@ -16,6 +17,7 @@ const EMPTY_FORM = {
 };
 
 function AdminCoupons() {
+  const toast = useToast();
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -60,8 +62,11 @@ function AdminCoupons() {
       setForm(EMPTY_FORM);
       setShowForm(false);
       await load();
+      toast.success(`Coupon "${form.code.toUpperCase()}" created`);
     } catch (err) {
-      setFormError(err.message || "Could not create coupon.");
+      const message = err.message || "Could not create coupon.";
+      setFormError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -71,8 +76,11 @@ function AdminCoupons() {
     try {
       const { data } = await api.put(`/coupons/${id}/toggle`);
       setCoupons((prev) => prev.map((c) => (c._id === id ? data.coupon : c)));
+      toast.success(data.coupon.isActive ? "Coupon activated" : "Coupon disabled");
     } catch (err) {
-      setError(err.message || "Could not update coupon.");
+      const message = err.message || "Could not update coupon.";
+      setError(message);
+      toast.error(message);
     }
   };
 
@@ -81,8 +89,11 @@ function AdminCoupons() {
     try {
       await api.delete(`/coupons/${id}`);
       setCoupons((prev) => prev.filter((c) => c._id !== id));
+      toast.success("Coupon deleted");
     } catch (err) {
-      setError(err.message || "Could not delete coupon.");
+      const message = err.message || "Could not delete coupon.";
+      setError(message);
+      toast.error(message);
     }
   };
 

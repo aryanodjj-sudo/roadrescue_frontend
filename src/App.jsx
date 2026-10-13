@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import ScrollToTop from "./components/common/ScrollToTop";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -23,19 +24,12 @@ import Careers from "./pages/company/Careers";
 import Contact from "./pages/company/Contact";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import Subscription from "./pages/Subscription";
-function NotFound() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <h1 className="text-2xl font-semibold text-slate-600">
-        404 — Page Not Found
-      </h1>
-    </div>
-  );
-}
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
     <Routes>
+      <ScrollToTop />
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />

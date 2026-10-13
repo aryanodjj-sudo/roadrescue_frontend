@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa";
 import Navbar from "../components/navbar/Navbar";
 import Footer from "../components/common/Footer";
+import NearbyMechanicsPreview from "../components/home/NearbyMechanicsPreview";
 import Button from "../components/common/Button";
 import SectionHeading from "../components/common/SectionHeading";
 import { servicesData } from "../data/servicesData";
@@ -255,6 +256,8 @@ function Home() {
           </motion.div>
         </div>
       </section>
+
+      <NearbyMechanicsPreview />
 
       {/* ============ SERVICES ============ */}
       <section id="services" className="py-20 sm:py-28 bg-white">

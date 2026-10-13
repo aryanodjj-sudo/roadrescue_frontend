@@ -1,14 +1,40 @@
-import { useParams, Navigate, Link } from "react-router-dom";
-import { FaFileInvoice, FaPrint, FaCrown, FaTag } from "react-icons/fa";
+import { useState, useEffect, useCallback } from "react";
+import { useParams, Navigate } from "react-router-dom";
+import { FaFileInvoice, FaPrint, FaCrown, FaTag, FaCheckCircle, FaCreditCard } from "react-icons/fa";
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import Button from "../components/common/Button";
 import RecipientLocationBadge from "../components/service/RecipientLocationBadge";
 import { useServiceRequests } from "../context/ServiceRequestContext";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
+import api from "../utils/api";
 
 function Invoice() {
   const { id } = useParams();
   const { getRequestById } = useServiceRequests();
+  const { user } = useAuth();
+  const toast = useToast();
   const request = getRequestById(id);
+
+  const [payment, setPayment] = useState(null);
+  const [loadingPayment, setLoadingPayment] = useState(true);
+  const [paying, setPaying] = useState(false);
+
+  const loadPayment = useCallback(async () => {
+    setLoadingPayment(true);
+    try {
+      const { data } = await api.get(`/payments/${id}`);
+      setPayment(data.payment);
+    } catch {
+      setPayment(null);
+    } finally {
+      setLoadingPayment(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    loadPayment();
+  }, [loadPayment]);
 
   if (!request || request.status !== "Completed") {
     return <Navigate to="/dashboard/history" replace />;
@@ -19,6 +45,54 @@ function Invoice() {
   const serviceFee = request.mechanic.pricePerVisit;
   const platformFee = Math.round(serviceFee * 0.05);
   const total = serviceFee + platformFee;
+
+  const handlePayNow = async () => {
+    if (!window.Razorpay) {
+      toast.error("Payment system is still loading — please try again in a moment.");
+      return;
+    }
+
+    setPaying(true);
+    try {
+      const { data: order } = await api.post(`/payments/${id}/create-order`);
+
+      const razorpay = new window.Razorpay({
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.orderId,
+        name: "RoadRescue",
+        description: `${request.serviceTitle} — ${request.mechanic.name}`,
+        prefill: {
+          name: user?.name,
+          email: user?.email,
+          contact: user?.phone,
+        },
+        theme: { color: "#2563eb" },
+        handler: async (response) => {
+          try {
+            const { data } = await api.post(`/payments/${id}/verify`, response);
+            setPayment(data.payment);
+            toast.success("Payment successful!");
+          } catch (err) {
+            toast.error(err.message || "Payment verification failed. Contact support if money was deducted.");
+          } finally {
+            setPaying(false);
+          }
+        },
+        modal: {
+          ondismiss: () => setPaying(false),
+        },
+      });
+
+      razorpay.open();
+    } catch (err) {
+      toast.error(err.message || "Could not start payment. Please try again.");
+      setPaying(false);
+    }
+  };
+
+  const isPaid = payment?.status === "paid";
 
   return (
     <DashboardLayout>
@@ -66,39 +140,50 @@ function Invoice() {
               <p className="text-sm">This service was fully covered by your RoadRescue subscription.</p>
             </div>
           ) : (
-            <div className="space-y-2 text-sm mb-6">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Service charge</span>
-                <span>₹{originalPrice}</span>
-              </div>
-              {discountAmount > 0 && (
-                <div className="flex justify-between text-green-600">
-                  <span className="flex items-center gap-1">
-                    <FaTag className="text-xs" />
-                    Discount {request.couponCode ? `(${request.couponCode})` : ""}
-                  </span>
-                  <span>-₹{discountAmount}</span>
+            <>
+              <div className="space-y-2 text-sm mb-6">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Service charge</span>
+                  <span>₹{originalPrice}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span className="flex items-center gap-1">
+                      <FaTag className="text-xs" />
+                      Discount {request.couponCode ? `(${request.couponCode})` : ""}
+                    </span>
+                    <span>-₹{discountAmount}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Platform fee (5%)</span>
+                  <span>₹{platformFee}</span>
+                </div>
+                <div className="flex justify-between font-bold text-slate-900 text-base pt-2 border-t border-slate-100">
+                  <span>{isPaid ? "Total Paid" : "Amount Due"}</span>
+                  <span>₹{payment?.total ?? total}</span>
+                </div>
+              </div>
+
+              {loadingPayment ? (
+                <div className="h-11 bg-slate-100 rounded-xl animate-pulse" />
+              ) : isPaid ? (
+                <div className="flex items-center justify-center gap-2 bg-green-50 text-green-600 font-semibold rounded-xl py-3 print:hidden">
+                  <FaCheckCircle /> Paid on {new Date(payment.paidAt).toLocaleDateString()}
+                </div>
+              ) : (
+                <Button
+                  variant="primary"
+                  className="w-full justify-center py-3 print:hidden"
+                  onClick={handlePayNow}
+                  disabled={paying}
+                >
+                  <FaCreditCard className="text-sm" />
+                  {paying ? "Processing..." : `Pay ₹${total} Now`}
+                </Button>
               )}
-              <div className="flex justify-between">
-                <span className="text-slate-500">Platform fee (5%)</span>
-                <span>₹{platformFee}</span>
-              </div>
-              <div className="flex justify-between font-bold text-slate-900 text-base pt-2 border-t border-slate-100">
-                <span>Total Paid</span>
-                <span>₹{total}</span>
-              </div>
-            </div>
+            </>
           )}
-
-          <p className="text-xs text-slate-400">
-            This is a demo invoice generated locally. Real payment processing and PDF generation will be
-            added once a payment gateway is integrated.
-          </p>
-
-          <Link to="/dashboard/history" className="inline-block mt-6 text-sm font-semibold text-primary-600">
-            ← Back to History
-          </Link>
         </div>
       </div>
     </DashboardLayout>

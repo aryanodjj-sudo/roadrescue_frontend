@@ -3,6 +3,7 @@ import { FaExclamationTriangle } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import { useSocket } from "../../context/SocketContext";
 import { useServiceRequests, REQUEST_STATUSES } from "../../context/ServiceRequestContext";
+import { useToast } from "../../context/ToastContext";
 import Button from "../../components/common/Button";
 import ComplaintsPanel from "../../components/complaints/ComplaintsPanel";
 import MechanicSidebar from "../../components/mechanic/MechanicSidebar";
@@ -18,6 +19,7 @@ import MechanicProfile from "./sections/MechanicProfile";
 
 function MechanicDashboard() {
   const { user, logout } = useAuth();
+  const toast = useToast();
   const {
     getIncomingRequests,
     getActiveJobForMechanic,
@@ -31,8 +33,6 @@ function MechanicDashboard() {
   const [activeSection, setActiveSection] = useState("overview");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
-  // Mechanic's own profile/availability — backed by GET /api/mechanics/me
-  // and PUT /api/mechanics/profile, /api/mechanics/status.
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState("");
@@ -58,14 +58,8 @@ function MechanicDashboard() {
   }, [loadProfile]);
   const socket = useSocket();
 
-  // Mirrors this mechanic's own last-known position so the active job map
-  // preview can plot it locally — purely a UI read of the same watcher
-  // below, not a second location source.
   const [ownLocation, setOwnLocation] = useState(null);
 
-  // Broadcasts the mechanic's live location to whoever is watching this
-  // specific request (the customer's TrackService page), while there's an
-  // active job. Stops automatically when the job ends or they go offline.
   useEffect(() => {
     if (!socket || !activeJob || !navigator.geolocation) return;
 
@@ -83,10 +77,7 @@ function MechanicDashboard() {
         });
         setOwnLocation(coords);
       },
-      () => {
-        // Location denied/unavailable — customer just won't see live
-        // position updates for this job, everything else keeps working.
-      },
+      () => {},
       { enableHighAccuracy: true, maximumAge: 5000 }
     );
 
@@ -125,9 +116,6 @@ function MechanicDashboard() {
       ).toFixed(1)
     : "—";
 
-  // Going online without a location means /mechanics/nearby will never
-  // surface this mechanic to any user searching nearby — so grab a fresh
-  // GPS fix and send it along in the same status update.
   const toggleOnline = async () => {
     if (!profile) return;
     setStatusError("");
@@ -148,9 +136,13 @@ function MechanicDashboard() {
           setStatusError(
             "You're online, but location access was denied — customers searching nearby won't see you until it's shared."
           );
+        } else {
+          toast.success(data.isOnline ? "You're online and visible to nearby customers" : "You're now offline");
         }
       } catch (err) {
-        setStatusError(err.message || "Couldn't update your availability.");
+        const message = err.message || "Couldn't update your availability.";
+        setStatusError(message);
+        toast.error(message);
       }
     };
 
@@ -168,29 +160,59 @@ function MechanicDashboard() {
     }
   };
 
-  // Persists a partial profile update to the backend, updating local state
-  // only after the server confirms (so a failed save doesn't silently
-  // desync the UI from what's actually stored).
   const saveProfileField = async (patch) => {
     setSaving(true);
     setProfileError("");
     try {
       const { data } = await api.put("/mechanics/profile", patch);
       setProfile(data.mechanic);
+      toast.success("Profile updated");
     } catch (err) {
-      setProfileError(err.message || "Couldn't save your changes.");
+      const message = err.message || "Couldn't save your changes.";
+      setProfileError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleAccept = (requestId) => {
-    acceptRequest(requestId, user);
-    setActiveSection("active");
+  const handleAccept = async (requestId) => {
+    try {
+      await acceptRequest(requestId, user);
+      toast.success("Job accepted — head over to Active Job");
+      setActiveSection("active");
+    } catch (err) {
+      toast.error(err.message || "Couldn't accept this request — it may have been taken already.");
+    }
   };
 
-  const handleDismiss = (requestId) => {
-    dismissRequest(requestId, user.id);
+  const handleDismiss = async (requestId) => {
+    try {
+      await dismissRequest(requestId, user.id);
+      toast.info("Request dismissed");
+    } catch (err) {
+      toast.error(err.message || "Couldn't dismiss this request.");
+    }
+  };
+
+  const handleAdvanceStatus = async (requestId, newStatus) => {
+    try {
+      await advanceStatus(requestId, newStatus);
+      toast.success(
+        newStatus === "Completed" ? "Job marked as completed!" : `Status updated to "${newStatus}"`
+      );
+    } catch (err) {
+      toast.error(err.message || "Couldn't update job status.");
+    }
+  };
+
+  const handleCancelJob = async (requestId) => {
+    try {
+      await cancelRequest(requestId);
+      toast.info("Job cancelled");
+    } catch (err) {
+      toast.error(err.message || "Couldn't cancel this job.");
+    }
   };
 
   const nextStatus = activeJob
@@ -265,8 +287,8 @@ function MechanicDashboard() {
             ownLocation={ownLocation}
             navigateUrl={navigateUrl}
             nextStatus={nextStatus}
-            onAdvanceStatus={advanceStatus}
-            onCancel={cancelRequest}
+            onAdvanceStatus={handleAdvanceStatus}
+            onCancel={handleCancelJob}
           />
         );
       case "completed":

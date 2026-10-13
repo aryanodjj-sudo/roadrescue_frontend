@@ -1,16 +1,56 @@
-# React + Vite
+# RoadRescue — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19 + Vite single-page app for RoadRescue — a real-time roadside
+assistance platform with three role-based experiences: Vehicle Owner,
+Mechanic, and Admin.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Framework:** React 19, Vite
+- **Styling:** Tailwind CSS
+- **Routing:** React Router 7
+- **State:** React Context API (Auth, Socket, Vehicle, ServiceRequest, Subscription)
+- **Real-time:** Socket.IO client
+- **Maps:** Leaflet + OpenStreetMap tiles
+- **Payments:** Razorpay Checkout
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+cp .env.example .env    # set VITE_API_URL to your backend
+npm run dev               # http://localhost:5173
+```
 
-## Expanding the Oxlint configuration
+## Environment Variables
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+| Variable | Description |
+|---|---|
+| `VITE_API_URL` | Base URL of the backend API, e.g. `http://localhost:5000/api` |
+
+## Project Structure
+src/
+├── components/ reusable UI, grouped by domain
+├── pages/ route-level views (user / mechanic / admin)
+├── context/ global state providers
+├── utils/ API client, validators, helpers
+└── data/ static reference data (services, social links)
+
+
+## Key Features
+
+- Role-based registration/login (Vehicle Owner, Mechanic, Admin)
+- Live geolocation-based nearby-mechanic search — public, no login required
+- Real-time GPS tracking of an assigned mechanic during an active job
+- Instant toast notifications on request accept/status-change/cancel
+- Razorpay-powered invoice payments (test mode)
+- Full admin back-office: verification, coupons, complaints, reports
+
+## Build
+
+```bash
+npm run build      # outputs to dist/
+npm run preview    # preview the production build locally
+```
+
+Deploys as a static SPA (Vercel-ready — see `vercel.json`).

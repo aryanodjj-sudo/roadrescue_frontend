@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaUser, FaEnvelope, FaCarSide, FaTools, FaUserShield } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import Button from "../components/common/Button";
 import PasswordInput from "../components/common/PasswordInput";
 import {
@@ -16,6 +17,7 @@ import { MIN_PASSWORD_LENGTH } from "../utils/constants";
 function Register() {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const toast = useToast();
 
   const [role, setRole] = useState("user");
   const [formData, setFormData] = useState({
@@ -35,6 +37,8 @@ function Register() {
     e.preventDefault();
     setError("");
 
+    // Field-level validation stays inline — it's instant/synchronous,
+    // so a toast (which can be dismissed/missed) isn't the right fit here.
     if (!isNonEmpty(formData.name)) {
       setError("Please enter your full name");
       return;
@@ -59,9 +63,8 @@ function Register() {
 
     try {
       const newUser = await register({ ...formData, role });
+      toast.success(`Account created — welcome to RoadRescue, ${newUser.name.split(" ")[0]}!`);
 
-      // FIXED: was navigating to "/" for new "user" accounts, inconsistent
-      // with Login.jsx's redirect. Now matches it exactly.
       if (newUser.role === "mechanic") {
         navigate("/mechanic/dashboard");
       } else if (newUser.role === "admin") {
@@ -70,7 +73,9 @@ function Register() {
         navigate("/dashboard");
       }
     } catch (err) {
-      setError(err.message || "Registration failed. Please try again.");
+      const message = err.message || "Registration failed. Please try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -97,15 +102,12 @@ function Register() {
           Join RoadRescue in seconds
         </p>
 
-        {/* Role Toggle */}
         <div className="grid grid-cols-3 gap-1 bg-slate-100 rounded-xl p-1 mb-6">
           <button
             type="button"
             onClick={() => setRole("user")}
             className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
-              role === "user"
-                ? "bg-white text-primary-600 shadow-sm"
-                : "text-slate-500"
+              role === "user" ? "bg-white text-primary-600 shadow-sm" : "text-slate-500"
             }`}
           >
             <FaCarSide /> <span className="whitespace-nowrap">Vehicle Owner</span>
@@ -114,9 +116,7 @@ function Register() {
             type="button"
             onClick={() => setRole("mechanic")}
             className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
-              role === "mechanic"
-                ? "bg-white text-primary-600 shadow-sm"
-                : "text-slate-500"
+              role === "mechanic" ? "bg-white text-primary-600 shadow-sm" : "text-slate-500"
             }`}
           >
             <FaTools /> <span className="whitespace-nowrap">Mechanic</span>
@@ -125,9 +125,7 @@ function Register() {
             type="button"
             onClick={() => setRole("admin")}
             className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
-              role === "admin"
-                ? "bg-white text-primary-600 shadow-sm"
-                : "text-slate-500"
+              role === "admin" ? "bg-white text-primary-600 shadow-sm" : "text-slate-500"
             }`}
           >
             <FaUserShield /> <span className="whitespace-nowrap">Admin</span>
@@ -142,9 +140,7 @@ function Register() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Full Name
-            </label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
             <div className="relative">
               <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -160,9 +156,7 @@ function Register() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Email
-            </label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
             <div className="relative">
               <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -178,9 +172,7 @@ function Register() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Password
-            </label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
             <PasswordInput
               name="password"
               value={formData.password}

@@ -1,8 +1,9 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useAuth } from "./AuthContext";
+import { useSocket } from "./SocketContext";
+import { useToast } from "./ToastContext";
 import api from "../utils/api";
 import { servicesData } from "../data/servicesData";
-
 const ServiceRequestContext = createContext();
 
 export const REQUEST_STATUSES = [
@@ -58,6 +59,8 @@ function normalizeRequest(r) {
 
 export function ServiceRequestProvider({ children }) {
   const { user, isAuthenticated } = useAuth();
+  const socket = useSocket();
+  const toast = useToast();
   const [requests, setRequests] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -100,6 +103,27 @@ export function ServiceRequestProvider({ children }) {
     setLoading(true);
     Promise.all([refreshRequests(), refreshNotifications()]).finally(() => setLoading(false));
   }, [user, refreshRequests, refreshNotifications]);
+
+  // Live push: the server emits "notification:new" the instant a request
+  // is accepted / its status changes / it's cancelled (see notify() in
+  // serviceRequestController.js). This shows an instant toast and pulls
+  // the fresh state in, so badge counts and lists update without the
+  // user ever needing to manually refresh the page.
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewNotification = ({ message }) => {
+      toast.info(message);
+      refreshNotifications();
+      refreshRequests();
+    };
+
+    socket.on("notification:new", handleNewNotification);
+
+    return () => {
+      socket.off("notification:new", handleNewNotification);
+    };
+  }, [socket, refreshNotifications, refreshRequests, toast]);
 
   const createRequest = async ({
     vehicle,

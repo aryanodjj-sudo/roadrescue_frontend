@@ -3,16 +3,18 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaEnvelope, FaCarSide, FaTools, FaUserShield } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 import Button from "../components/common/Button";
 import PasswordInput from "../components/common/PasswordInput";
 
 function Login() {
   const navigate = useNavigate();
-  const location = useLocation();   
+  const location = useLocation();
   const { login } = useAuth();
+  const toast = useToast();
 
-  const redirectTo = location.state?.redirectTo;   
-  const openService = location.state?.openService; 
+  const redirectTo = location.state?.redirectTo;
+  const openService = location.state?.openService;
   const [role, setRole] = useState("user");
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
@@ -29,8 +31,8 @@ function Login() {
 
     try {
       const loggedInUser = await login({ ...formData, role });
+      toast.success(`Welcome back, ${loggedInUser.name.split(" ")[0]}!`);
 
-      // Redirect based on role
       if (loggedInUser.role === "mechanic") {
         navigate("/mechanic/dashboard");
       } else if (loggedInUser.role === "admin") {
@@ -41,10 +43,12 @@ function Login() {
           state: openService ? { openService } : undefined,
         });
       } else {
-        navigate("/dashboard"); // FIXED: was navigating to "/" before
+        navigate("/dashboard");
       }
     } catch (err) {
-      setError(err.message || "Login failed. Please try again.");
+      const message = err.message || "Login failed. Please try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -76,9 +80,7 @@ function Login() {
             type="button"
             onClick={() => setRole("user")}
             className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
-              role === "user"
-                ? "bg-white text-primary-600 shadow-sm"
-                : "text-slate-500"
+              role === "user" ? "bg-white text-primary-600 shadow-sm" : "text-slate-500"
             }`}
           >
             <FaCarSide /> <span className="whitespace-nowrap">Vehicle Owner</span>
@@ -87,9 +89,7 @@ function Login() {
             type="button"
             onClick={() => setRole("mechanic")}
             className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
-              role === "mechanic"
-                ? "bg-white text-primary-600 shadow-sm"
-                : "text-slate-500"
+              role === "mechanic" ? "bg-white text-primary-600 shadow-sm" : "text-slate-500"
             }`}
           >
             <FaTools /> <span className="whitespace-nowrap">Mechanic</span>
@@ -98,9 +98,7 @@ function Login() {
             type="button"
             onClick={() => setRole("admin")}
             className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 px-1 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
-              role === "admin"
-                ? "bg-white text-primary-600 shadow-sm"
-                : "text-slate-500"
+              role === "admin" ? "bg-white text-primary-600 shadow-sm" : "text-slate-500"
             }`}
           >
             <FaUserShield /> <span className="whitespace-nowrap">Admin</span>
@@ -115,9 +113,7 @@ function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Email
-            </label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
             <div className="relative">
               <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -133,9 +129,7 @@ function Login() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Password
-            </label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
             <PasswordInput
               name="password"
               value={formData.password}

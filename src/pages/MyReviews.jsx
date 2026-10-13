@@ -14,6 +14,7 @@ import DashboardLayout from "../components/dashboard/DashboardLayout";
 import StatTile from "../components/dashboard/StatTile";
 import Button from "../components/common/Button";
 import { useServiceRequests } from "../context/ServiceRequestContext";
+import { useToast } from "../context/ToastContext";
 import { formatDate } from "../utils/formatDate";
 
 function StarPicker({ value, onChange }) {
@@ -51,6 +52,7 @@ function StarRow({ rating }) {
 // rating/comment/submitting state so submitting one doesn't disturb the
 // others in the list.
 function PendingReviewCard({ request, onSubmit }) {
+  const toast = useToast();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -62,8 +64,11 @@ function PendingReviewCard({ request, onSubmit }) {
     setIsSubmitting(true);
     try {
       await onSubmit(request.id, { rating, comment });
+      toast.success("Review submitted — thanks for the feedback!");
     } catch (err) {
-      setError(err.message || "Could not submit review. Please try again.");
+      const message = err.message || "Could not submit review. Please try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

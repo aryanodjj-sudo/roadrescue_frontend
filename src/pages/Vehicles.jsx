@@ -5,12 +5,13 @@ import VehicleCard from "../components/vehicle/VehicleCard";
 import VehicleFormModal from "../components/vehicle/VehicleFormModal";
 import Button from "../components/common/Button";
 import { useVehicles } from "../context/VehicleContext";
+import { useToast } from "../context/ToastContext";
 
 function Vehicles() {
   const { vehicles, addVehicle, updateVehicle, deleteVehicle } = useVehicles();
+  const toast = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
-  const [deleteError, setDeleteError] = useState("");
 
   const openAddModal = () => {
     setEditingVehicle(null);
@@ -25,18 +26,20 @@ function Vehicles() {
   const handleSubmit = async (data) => {
     if (editingVehicle) {
       await updateVehicle(editingVehicle.id, data);
+      toast.success("Vehicle details updated");
     } else {
       await addVehicle(data);
+      toast.success("Vehicle added to your account");
     }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Remove this vehicle from your account?")) return;
-    setDeleteError("");
     try {
       await deleteVehicle(id);
+      toast.success("Vehicle removed");
     } catch (err) {
-      setDeleteError(err.message || "Could not delete this vehicle.");
+      toast.error(err.message || "Could not delete this vehicle.");
     }
   };
 
@@ -48,7 +51,6 @@ function Vehicles() {
 
   return (
     <DashboardLayout>
-      {/* HEADER BANNER */}
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 text-white mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="relative z-10">
           <p className="text-slate-400 text-sm font-semibold uppercase tracking-wide mb-2">
@@ -65,7 +67,6 @@ function Vehicles() {
         <FaCarSide className="absolute -right-4 -bottom-6 text-[160px] text-white/5 rotate-6" />
       </div>
 
-      {/* STATS */}
       {vehicles.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
@@ -88,15 +89,11 @@ function Vehicles() {
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 col-span-2 sm:col-span-1">
               <p className="text-xs text-slate-400 mb-1">Most Common Type</p>
               <p className="text-lg font-bold text-slate-900">{topType[0]}</p>
-              <p className="text-xs sm:text-sm text-slate-500">{topType[1]} vehicle{topType[1] === 1 ? "" : "s"}</p>
+              <p className="text-xs sm:text-sm text-slate-500">
+                {topType[1]} vehicle{topType[1] === 1 ? "" : "s"}
+              </p>
             </div>
           )}
-        </div>
-      )}
-
-      {deleteError && (
-        <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3 mb-6">
-          {deleteError}
         </div>
       )}
 
@@ -114,7 +111,12 @@ function Vehicles() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {vehicles.map((vehicle) => (
-            <VehicleCard key={vehicle.id} vehicle={vehicle} onEdit={openEditModal} onDelete={handleDelete} />
+            <VehicleCard
+              key={vehicle.id}
+              vehicle={vehicle}
+              onEdit={openEditModal}
+              onDelete={handleDelete}
+            />
           ))}
         </div>
       )}

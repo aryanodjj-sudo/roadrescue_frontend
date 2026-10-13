@@ -15,6 +15,7 @@ import Button from "../components/common/Button";
 import { servicesData, calculateFuelBill, TYRE_POSITIONS, TYRE_PROBLEMS } from "../data/servicesData";
 import { useServiceRequests } from "../context/ServiceRequestContext";
 import { useSubscription } from "../context/SubscriptionContext";
+import { useToast } from "../context/ToastContext";
 import api from "../utils/api";
 
 function BookingConfirmation() {
@@ -22,6 +23,7 @@ function BookingConfirmation() {
   const navigate = useNavigate();
   const { createRequest } = useServiceRequests();
   const { isActive: hasActiveSubscription, subscription } = useSubscription();
+  const toast = useToast();
   const {
     mechanic,
     serviceType,
@@ -90,6 +92,7 @@ const tyreProblemLabels = isTyre
         orderValue: originalPrice,
       });
       setAppliedCoupon({ code: data.coupon.code, discountAmount: data.discountAmount, finalAmount: data.finalAmount });
+      toast.success(`Coupon "${data.coupon.code}" applied!`);
     } catch (err) {
       setAppliedCoupon(null);
       setCouponError(err.message || "Invalid coupon code");
@@ -122,9 +125,12 @@ const tyreProblemLabels = isTyre
       });
       setCreatedRequest(req);
       setStatus("done");
+      toast.success(`Request sent to ${mechanic.name}!`);
     } catch (err) {
-      setError(err.message || "Could not create the request. Please try again.");
+      const message = err.message || "Could not create the request. Please try again.";
+      setError(message);
       setStatus("error");
+      toast.error(message);
     }
   };
 

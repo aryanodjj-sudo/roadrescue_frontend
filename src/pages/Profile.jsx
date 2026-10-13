@@ -3,32 +3,30 @@ import { FaUser, FaEnvelope, FaPhone, FaSave, FaShieldAlt, FaIdBadge } from "rea
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import Button from "../components/common/Button";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 function Profile() {
   const { user, updateUser } = useAuth();
+  const toast = useToast();
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
     phone: user?.phone || "",
   });
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setSaved(false);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setIsSubmitting(true);
     try {
       await updateUser({ name: formData.name, phone: formData.phone });
-      setSaved(true);
+      toast.success("Profile updated successfully");
     } catch (err) {
-      setError(err.message || "Could not update your profile. Please try again.");
+      toast.error(err.message || "Could not update your profile. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -42,7 +40,6 @@ function Profile() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* PROFILE SUMMARY CARD */}
         <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white h-fit">
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-2xl font-bold mb-4 ring-4 ring-white/10">
             {user?.name?.charAt(0).toUpperCase()}
@@ -60,13 +57,8 @@ function Profile() {
           </div>
         </div>
 
-        {/* EDIT FORM CARD */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
           <h2 className="font-semibold text-slate-900 mb-6">Personal Information</h2>
-
-          {error && (
-            <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3 mb-4">{error}</div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -112,10 +104,6 @@ function Profile() {
                 />
               </div>
             </div>
-
-            {saved && (
-              <p className="text-sm text-green-600 font-medium">Profile updated successfully.</p>
-            )}
 
             <Button type="submit" variant="primary" className="mt-2" disabled={isSubmitting}>
               <FaSave className="text-sm" /> {isSubmitting ? "Saving..." : "Save Changes"}

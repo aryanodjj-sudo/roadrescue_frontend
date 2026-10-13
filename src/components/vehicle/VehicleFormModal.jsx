@@ -4,8 +4,10 @@ import { FaTimes } from "react-icons/fa";
 import Button from "../common/Button";
 import { VEHICLE_TYPES } from "../../utils/constants";
 import { isValidYear } from "../../utils/validators";
+import { useToast } from "../../context/ToastContext";
 
 function VehicleFormModal({ isOpen, onClose, onSubmit, initialData }) {
+  const toast = useToast();
   const [formData, setFormData] = useState({
     make: "",
     model: "",
@@ -33,8 +35,6 @@ function VehicleFormModal({ isOpen, onClose, onSubmit, initialData }) {
     e.preventDefault();
     setError("");
 
-    // Backs up the <input min/max> attributes with a real JS check —
-    // some browsers don't strictly block out-of-range values on submit.
     if (!isValidYear(formData.year)) {
       setError("Enter a valid year between 1980 and next year.");
       return;
@@ -45,7 +45,9 @@ function VehicleFormModal({ isOpen, onClose, onSubmit, initialData }) {
       await onSubmit(formData);
       onClose();
     } catch (err) {
-      setError(err.message || "Could not save this vehicle. Please try again.");
+      const message = err.message || "Could not save this vehicle. Please try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

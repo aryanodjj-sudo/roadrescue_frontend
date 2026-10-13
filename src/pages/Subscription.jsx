@@ -3,6 +3,7 @@ import { FaCrown, FaCheckCircle, FaTimes, FaBolt, FaWallet, FaHeadset } from "re
 import DashboardLayout from "../components/dashboard/DashboardLayout";
 import Button from "../components/common/Button";
 import { useSubscription } from "../context/SubscriptionContext";
+import { useToast } from "../context/ToastContext";
 
 const PLAN_META = {
   monthly: {
@@ -32,6 +33,7 @@ const FAQS = [
 
 function Subscription() {
   const { subscription, plans, loading, isActive, subscribeToPlan, cancelMySubscription } = useSubscription();
+  const toast = useToast();
   const [busyPlan, setBusyPlan] = useState(null);
   const [error, setError] = useState("");
   const [isCancelling, setIsCancelling] = useState(false);
@@ -41,8 +43,11 @@ function Subscription() {
     setBusyPlan(planKey);
     try {
       await subscribeToPlan(planKey);
+      toast.success(`${planKey === "annual" ? "Annual" : "Monthly"} plan activated!`);
     } catch (err) {
-      setError(err.message || "Could not activate subscription. Please try again.");
+      const message = err.message || "Could not activate subscription. Please try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setBusyPlan(null);
     }
@@ -54,8 +59,11 @@ function Subscription() {
     setError("");
     try {
       await cancelMySubscription();
+      toast.info("Subscription cancelled");
     } catch (err) {
-      setError(err.message || "Could not cancel subscription.");
+      const message = err.message || "Could not cancel subscription.";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsCancelling(false);
     }
